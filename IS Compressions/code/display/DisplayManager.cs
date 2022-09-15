@@ -7,7 +7,7 @@ using Color = SFML.Graphics.Color;
 using Font = SFML.Graphics.Font;
 using Image = SFML.Graphics.Image;
 
-namespace IS_Compressions.code;
+namespace IS_Compressions.code.display;
 class DisplayManager
 {
     public struct DisplaySettings
@@ -24,7 +24,7 @@ class DisplayManager
         {
             mapStartEnabled = v1; startScreenWidth = x; startScreenHeight = y; initialXOffset = v2; initialYOffset = v3; initialTilesShown = v4;
             minTilesShown = v5; maxTilesShown = v6;
-            baseR = v7; baseG = v8; baseB = v9; outR = v10; outG = v11; outB = v12; displayMode = v13; pixelWidth = v14; pixelHeight = v15 ;
+            baseR = v7; baseG = v8; baseB = v9; outR = v10; outG = v11; outB = v12; displayMode = v13; pixelWidth = v14; pixelHeight = v15;
         }
     }
 
@@ -110,7 +110,7 @@ class DisplayManager
         if (activeMap)
         {
             // clear map rendertexture
-            //mapRenderTexture.Clear(new Color(63, 63, 55));
+            window.Clear(new Color(150, 150, 150));
             overlayRenderTexture.Clear(new Color(0, 0, 0, 0));
             menuRenderTexture.Clear(new Color(0, 0, 0, 0));
 
@@ -123,7 +123,7 @@ class DisplayManager
                 drawCoords();
                 //drawControls();
                 drawDebug();
-                //drawColorScheme();
+                drawColorScheme();
             }
 
 
@@ -144,7 +144,7 @@ class DisplayManager
             //overlayTextureSprite.Scale = new Vector2f(1,1);
             window.Draw(overlayTextureSprite);
         }
-        if (activeMenu)
+        if (viewingTile)
         {
             menuRenderTexture.Display();
 
@@ -164,8 +164,8 @@ class DisplayManager
         //var tileDisplayWidth = (int)(displaySettings.startScreenWidth / tileSize) + 2;
         //var tileDisplayHeight = (int)(displaySettings.startScreenHeight / tileSize) + 2;
 
-        int width = tileMap.getWidth();
-        int height = tileMap.getHeight();
+        var width = tileMap.getWidth();
+        var height = tileMap.getHeight();
 
         rectPoints.Clear();
 
@@ -220,27 +220,14 @@ class DisplayManager
         }
         //mapRenderTexture.Draw()
         mapRenderTexture.Draw(rectPoints.ToArray(), PrimitiveType.Quads);
+        draw();
     }
-    /*
-    private RectangleShape drawTile(Tile t, Vector2f screenPos)
-    {
-        return drawTile(t.getColor(getDisplayMode()), screenPos);
-    }
-    private RectangleShape drawTile(Color highlight, Vector2f screenPos)
-    {
-        RectangleShape rect = new RectangleShape();
-        rect.Position = screenPos;
-        rect.Size = new Vector2f((float)tileSize, (float)tileSize);
-        rect.FillColor = highlight;
-        return rect;
-        //mapRenderTexture.Draw(rect);
-    }
-    */
     private void drawTileStats()
     {
+
         var viewTile = tileMap.getTile(viewTileCoords.X, viewTileCoords.Y);
 
-        string featureText = "This is text";
+        var featureText = "This is text";
 
         var offset = 5;
         var fontSize = 30; // Pixels
@@ -249,7 +236,7 @@ class DisplayManager
         var ySize = 4 * fontSize + 6 * offset;
 
         var size = new Vector2f(xSize, ySize);
-        var rect = new RoundedRectangleShape(size, 5, 5); // A class I found off of GitHub (make sure to add the files to your IDE in order to see them)
+        var rect = new RoundedRectangleShape(size, 5, 5);
         rect.FillColor = new Color(100, 100, 100);
         rect.Position = viewTileDisplayCoords;
 
@@ -267,20 +254,13 @@ class DisplayManager
         text.DisplayedString = "Tile (" + viewTileCoords.X + "," + viewTileCoords.Y + ")" + (featureText != "" ? " - " + featureText : "");
         menuRenderTexture.Draw(text);
         text.Style = Text.Styles.Regular;
-        /*
+        
         text.Position = new Vector2f(text.Position.X, text.Position.Y + fontSize + offset);
-        text.DisplayedString = "Elevation: " + (int)(100 * viewTile.getAttribute("elevation"));
-        mapRenderTexture.Draw(text);
+        text.DisplayedString = "R " + viewTile.getColor().R +
+                             "\nG " + viewTile.getColor().G +
+                             "\nG " + viewTile.getColor().B;
 
-        text.Position = new Vector2f(text.Position.X, text.Position.Y + fontSize + offset);
-        text.DisplayedString = "Temperature: " + (int)(100 * viewTile.getAttribute("temperature"));
-        mapRenderTexture.Draw(text);
-
-        text.Position = new Vector2f(text.Position.X, text.Position.Y + fontSize + offset);
-        text.DisplayedString = "Humidity: " + (int)(100 * viewTile.getAttribute("humidity"));
-        mapRenderTexture.Draw(text);
-        */
-
+        menuRenderTexture.Draw(text);
     }
 
     private void drawCoords()
@@ -315,7 +295,7 @@ class DisplayManager
         controlText.Font = font;
         if (Keyboard.IsKeyPressed(Keyboard.Key.H))
         {
-            controlText.DisplayedString = "WASD/arrows/click-and-drag to move. Shift to go faster.\nSpace to regenerate terrain. F3 to enter seed in console.\nC/V to change display mode.\nClick on tile to view, ESC to stop viewing.\nF1 to toggle UI.";
+            controlText.DisplayedString = "WASD/arrows/click-and-drag to move. \nShift/Control to go faster/slower. \nC/V to change display mode.\nF1 to toggle UI.";
         }
         else
         {
@@ -351,26 +331,37 @@ class DisplayManager
         debugText.Style = Text.Styles.Bold;
 
 
-        debugText.Position = new Vector2f(displaySettings.startScreenWidth - debugText.GetGlobalBounds().Width - 10, 10);
+        debugText.Position = new Vector2f(getWindowWidth() - debugText.GetGlobalBounds().Width - 10, 10);
         overlayRenderTexture.Draw(debugText);
 
         //debugText.DisplayedString = tileMap.getSeed().ToString();
 
         debugText.FillColor = new Color(255, 255, 255);
 
-        debugText.CharacterSize = 15;
+        debugText.CharacterSize = 24;
 
         //debugText.Position = new Vector2f(displaySettings.startScreenWidth - debugText.GetGlobalBounds().Width - 10, 70);
         //overlayRenderTexture.Draw(debugText);
 
-        debugText.DisplayedString = tileMap.GetSettings().width + " x " + tileMap.GetSettings().height + "\n";
+        debugText.DisplayedString = "(\t" + tileMap.GetSettings().width + " x " + tileMap.GetSettings().height;
 
-        if (tileMap.inBounds(-(int)xOffset, -(int)yOffset))
+        //Get the current position of the mouse relative to the window
+        Vector2f mouseCoords = new Vector2f(Mouse.GetPosition().X - window.Position.X, Mouse.GetPosition().Y - window.Position.Y - 32);
+        //Find the tile the mouse is currently hovering over
+        Vector2f attemptTilePos = new Vector2f((mouseCoords.X / scale) - xOffset, ((mouseCoords.Y / scale) - yOffset));
+        //Account for map centering in the middle of the screen instead of the top right corner
+        attemptTilePos -= new Vector2f((float)getWindowWidth() / 2 / scale, (float)getWindowHeight() / 2 / scale);
+
+        Vector2i attemptTilePosInt = new Vector2i((int)attemptTilePos.X, (int)attemptTilePos.Y);
+
+        if (tileMap.inBounds(attemptTilePosInt.X,attemptTilePosInt.Y))
         {
-            debugText.DisplayedString += tileMap.getTile(-(int)xOffset, -(int)yOffset).getColor().ToString();
+            debugText.DisplayedString += "\t\tX(" + attemptTilePosInt.X + ") Y(" + attemptTilePosInt.Y + ")\t";
+            Color colStr = tileMap.getTile(attemptTilePosInt.X, attemptTilePosInt.Y).getColor();
+            debugText.DisplayedString += "R(" + colStr.R + ") G(" + colStr.G + ") B(" + colStr.B + ")";
         }
-        
-        debugText.Position = new Vector2f(displaySettings.startScreenWidth - debugText.GetGlobalBounds().Width - 10, 100);
+
+        debugText.Position = new Vector2f(-15, getWindowHeight() - debugText.GetGlobalBounds().Height - 10);
         overlayRenderTexture.Draw(debugText);
     }
     private void drawColorScheme()
@@ -381,16 +372,16 @@ class DisplayManager
         switch (displaySettings.displayMode)
         {
             case 0:
-                colorSchemeText.DisplayedString = "Elevation + Features";
+                colorSchemeText.DisplayedString = "";
                 break;
             case 1:
-                colorSchemeText.DisplayedString = "Elevation";
+                colorSchemeText.DisplayedString = "Red";
                 break;
             case 2:
-                colorSchemeText.DisplayedString = "Temperature";
+                colorSchemeText.DisplayedString = "Green";
                 break;
             case 3:
-                colorSchemeText.DisplayedString = "Humidity";
+                colorSchemeText.DisplayedString = "Blue";
                 break;
             default:
                 colorSchemeText.DisplayedString = "Invalid display setting!";
@@ -407,7 +398,7 @@ class DisplayManager
         colorSchemeText.Style = Text.Styles.Bold;
 
 
-        colorSchemeText.Position = new Vector2f(10, displaySettings.startScreenHeight - colorSchemeText.GetGlobalBounds().Height - 20);
+        colorSchemeText.Position = new Vector2f(getWindowWidth() - colorSchemeText.GetGlobalBounds().Width - 10, getWindowHeight() - colorSchemeText.GetGlobalBounds().Height - 20);
         overlayRenderTexture.Draw(colorSchemeText);
     }
     double getTilesShown()
@@ -442,13 +433,8 @@ class DisplayManager
         tileMap = tm;
 
         resourceDir = rDir;
-        /*
-        if (resourceDir == "")
-        {
-            resourceDir = ExePath::mergePaths(ExePath::getExecutableDir(), "Resources");
-        }
-        */
-        //std::cout << "Using resource directory: " << resourceDir << "\n";
+
+        Console.WriteLine("Using resource directory " + resourceDir);
 
         xOffset = settings.initialXOffset;
         yOffset = settings.initialYOffset;
@@ -463,7 +449,7 @@ class DisplayManager
         cameraSpeed = displaySettings.initialTilesShown / cameraSecondsPerScreen;
         effectiveCameraSpeed = cameraSpeed;
 
-        changeTileSize(3);
+        changeScale(3);
     }
     public RenderWindow GetWindow()
     {
@@ -519,12 +505,12 @@ class DisplayManager
             else if (right && !left) { moveCamera((float)-effectiveCameraSpeed, 0); }
         }
     }
-    
+
     public void resize(object sender, SizeEventArgs e)
     {
         displaySettings.startScreenWidth = (int)e.Width;
         displaySettings.startScreenHeight = (int)e.Height;
-        changeTileSize(0); // Make sure tilesize is within bounds
+        changeScale(0); // Make sure tilesize is within bounds
 
         view.Center = new Vector2f(displaySettings.startScreenWidth / 2, displaySettings.startScreenHeight / 2);
         view.Size = new Vector2f(displaySettings.startScreenWidth, displaySettings.startScreenHeight);
@@ -533,6 +519,7 @@ class DisplayManager
 
         //mapRenderTexture = new RenderTexture((uint)displaySettings.startScreenWidth, (uint)displaySettings.startScreenHeight);
         menuRenderTexture = new RenderTexture((uint)displaySettings.startScreenWidth, (uint)displaySettings.startScreenHeight);
+        overlayRenderTexture = new RenderTexture((uint)displaySettings.startScreenWidth, (uint)displaySettings.startScreenHeight);
     }
     public void display()
     {
@@ -540,7 +527,7 @@ class DisplayManager
         draw();
         window.Display();
     }
-    
+
     public bool isOpen()
     {
         return window.IsOpen;
@@ -560,8 +547,8 @@ class DisplayManager
 
     public Vector2f GetTopLeftPos()
     {
-        var centerX = xOffset * scale + (getWindowWidth() / 2);
-        var centerY = yOffset * scale + (getWindowHeight() / 2);
+        var centerX = xOffset * scale + getWindowWidth() / 2;
+        var centerY = yOffset * scale + getWindowHeight() / 2;
 
         //var centerX = xOffset / scale;
         //var centerY = yOffset / sacle;// + getWindowHeight() / 2;
@@ -579,22 +566,22 @@ class DisplayManager
         return Math.Max(displaySettings.startScreenWidth, displaySettings.startScreenHeight) / displaySettings.maxTilesShown;
     }
 
-    public void changeTileSize(double delta)
+    public void changeScale(double delta)
     {
         scale = (float)Math.Max(Math.Min(scale + delta, getMaxTileSize()), getMinTileSize());
 
         //xOffset = center.X - displaySettings.startScreenWidth / (2 * tileSize);
         //yOffset = center.Y - displaySettings.startScreenHeight / (2 * tileSize);
 
-        setWhetherViewingTile(false); // Leads to general problems if this isn't here
+        //setWhetherViewingTile(false); // Leads to general problems if this isn't here
     }
     public void moveCamera(float x, float y)
     {
         xOffset += x / scale;
         yOffset += y / scale;
 
-        viewTileDisplayCoords.X -= x * (displaySettings.startScreenWidth / getWindowWidth());
-        viewTileDisplayCoords.Y -= y * (displaySettings.startScreenHeight / getWindowHeight());
+        viewTileDisplayCoords.X += x;// * (displaySettings.startScreenWidth / getWindowWidth());
+        viewTileDisplayCoords.Y += y;// * (displaySettings.startScreenHeight / getWindowHeight());
     }
     public void setViewTile(Vector2i tileCoords, Vector2f screenCoords)
     {
@@ -616,15 +603,16 @@ class DisplayManager
 
     public void onClick(int clickX, int clickY)
     {
-
+        /*
         if (viewingTile)
         {
             setWhetherViewingTile(false);
         }
         else
         {
-            setViewTile(new Vector2i(100, 100), new Vector2f(200, 200));
+            setViewTile(new Vector2i(100, 100), new Vector2f(100, 100));
         }
+        */
         //var tileCoords = getTileCoordsFromScreenCoords(clickX, clickY);
 
         /*
@@ -645,6 +633,7 @@ class DisplayManager
     }
     public void setDisplayMode(int mode)
     {
+        Console.WriteLine(mode);
         displaySettings.displayMode = mode;
     }
     public void OnKeyRelease(object sender, KeyEventArgs e)
@@ -682,11 +671,13 @@ class DisplayManager
         {
             setDisplayMode((getDisplayMode() + 3) % 4);
             tileMap.rerenderTiles(getDisplayMode());
+            drawTiles();
         }
         else if (e.Code == Keyboard.Key.V)
         {
             setDisplayMode((getDisplayMode() + 1) % 4);
             tileMap.rerenderTiles(getDisplayMode());
+            drawTiles();
         }
 
         // exits tile view
@@ -705,8 +696,8 @@ class DisplayManager
     {
         if (drag)
         {
-            int newX = e.X;
-            int newY = e.Y;
+            var newX = e.X;
+            var newY = e.Y;
 
             moveCamera(-(recentDragX - newX), -(recentDragY - newY));
 
@@ -741,7 +732,7 @@ class DisplayManager
     }
     public void OnMouseScroll(object sender, MouseWheelScrollEventArgs e)
     {
-        changeTileSize(e.Delta);
+        changeScale(e.Delta);
         //moveCamera(1 / e.Delta, 1 / e.Delta);
         //scale = e.Delta;
         double cameraSecondsPerScreen = 2;
