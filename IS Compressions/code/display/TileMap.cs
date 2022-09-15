@@ -37,7 +37,6 @@ class TileMap
         }
 
     }
-
     public void rerenderTiles(int displayMode)
     {
         for (int x = 0; x < settings.width; x++)
@@ -70,13 +69,3 @@ class TileMap
     }
 
 }
-
-/*
-TileMap::~TileMap() {
-    for (int i = 0; i < settings.width * settings.height; i++)
-    {
-        delete tileMap[i];
-    }
-    delete[] tileMap;
-}
-*/
