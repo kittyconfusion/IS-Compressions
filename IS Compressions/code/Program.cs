@@ -52,7 +52,7 @@ void main()
     Clock clock = new Clock();
 
     DisplayManager dm = new DisplayManager(ds, tileMap, path);
-    dm.GetWindow().SetFramerateLimit(30);
+    dm.GetWindow().SetFramerateLimit(60);
     //dm.GetWindow().SetVerticalSyncEnabled(true);
     dm.SetClock(clock);
 
