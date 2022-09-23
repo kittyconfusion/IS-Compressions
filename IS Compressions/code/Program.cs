@@ -1,5 +1,6 @@
 ﻿using IS_Compressions.code.display;
 using IS_Compressions.code.formats;
+using IS_Compressions.code.util;
 using Map_Generator_CSharp.Source.tiles;
 using SFML.System;
 using static IS_Compressions.code.display.DisplayManager;
@@ -52,7 +53,7 @@ void main()
     Clock clock = new Clock();
 
     DisplayManager dm = new DisplayManager(ds, tileMap, path);
-    dm.GetWindow().SetFramerateLimit(30);
+    dm.GetWindow().SetFramerateLimit(60);
     //dm.GetWindow().SetVerticalSyncEnabled(true);
     dm.SetClock(clock);
 
