@@ -8,8 +8,8 @@ namespace IS_Compressions.code.util;
 public class ByteFile : IDisposable
 {
     FileStream fs;
-
-    public ByteFile(string path, char type)
+    bool bigEndian; // 
+    public ByteFile(string path, char type, bool isBigEndian = true)
     {
         if (type == 'r')
         {
@@ -26,7 +26,7 @@ public class ByteFile : IDisposable
             File.Create(path).Close();
             fs = File.OpenWrite(path);
         }
-
+        bigEndian = isBigEndian;
     }
     public int ReadBytes(ref byte[] b)
     {
@@ -39,9 +39,20 @@ public class ByteFile : IDisposable
     public int ReadHexVals(int num = 1)
     {
         int val = 0;
-        for (int i = 0; i < num; i++)
+        if (bigEndian)
         {
-            val += (int)(fs.ReadByte() * Math.Pow(256, i));
+            for (int i = num - 1; i >= 0; i--)
+            {
+                val += (int)(fs.ReadByte() * Math.Pow(256, i));
+            }
+        }
+        else
+        {
+            for (int i = 0; i < num; i++)
+            {
+                val += (int)(fs.ReadByte() * Math.Pow(256, i));
+            }
+            
         }
         return val;
     }

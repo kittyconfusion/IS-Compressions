@@ -3,46 +3,27 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using SFML.Graphics;
-using static Map_Generator_CSharp.Source.tiles.TileMap;
+using Map_Generator_CSharp.Source.tiles;
 
-namespace Map_Generator_CSharp.Source.tiles;
-
-class Tile
+namespace IS_Compressions.code.display;
+internal class Tile
 {
-    private Color colorCache;
+    private Pixel[] pixels;
 
-    private bool needToRenderColor = true;
-
-    public Tile(Random rand)
+    int width, height;
+    public Tile(int w, int h)
     {
-        colorCache = new Color((byte)(int)(rand.NextDouble() * 255), (byte)(int)(rand.NextDouble() * 255), (byte)(int)(rand.NextDouble() * 255));
-    } 
-    public void setColor(Color c)
+        width = w;
+        height = h;
+        pixels = new Pixel[w * h];
+    }
+    public Pixel GetPixel(int x, int y)
     {
-        colorCache = c;
+        return pixels[(y * width) + x];
     }
 
-    public Color getColor(int displayMode = 0)
+    public void SetPixel(int x, int y, Pixel pixel)
     {
-        if (needToRenderColor) { renderColor(displayMode); needToRenderColor = false; }
-        switch (displayMode)
-        {
-            case 0:
-                return colorCache;
-            case 1:
-                return new Color(colorCache.R, 0, 0);
-            case 2:
-                return new Color(0, colorCache.G, 0);
-            case 3:
-                return new Color(0, 0, colorCache.B);
-            default:
-                return colorCache;
-        }
+        pixels[(y * width) + x] = pixel;
     }
-    public void renderColor(int displayMode)
-    {
-        colorCache = new Color(colorCache.R, colorCache.G, colorCache.B);
-    }
-
-};
+}

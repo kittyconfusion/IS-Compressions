@@ -52,7 +52,7 @@ class DisplayManager
 
     private double cameraSpeed, effectiveCameraSpeed;
 
-    private TileMap tileMap;
+    private Layer tileMap;
 
     private string @resourceDir;
 
@@ -220,7 +220,7 @@ class DisplayManager
         }
         //mapRenderTexture.Draw()
         mapRenderTexture.Draw(rectPoints.ToArray(), PrimitiveType.Quads);
-        draw();
+        //draw();
     }
     private void drawTileStats()
     {
@@ -406,9 +406,9 @@ class DisplayManager
         return Math.Max(displaySettings.startScreenWidth, displaySettings.startScreenHeight);
     }
 
-    public DisplayManager(DisplaySettings settings, TileMap tm, string rDir)
+    public DisplayManager(DisplaySettings settings, Layer tm, string rDir)
     {
-        window = new RenderWindow(new VideoMode((uint)settings.startScreenWidth, (uint)settings.startScreenHeight), "Cat Viewer Deluxe Extreme Edition ++");
+        window = new RenderWindow(new VideoMode((uint)settings.startScreenWidth, (uint)settings.startScreenHeight), "Cat Viewer Deluxe Extreme Edition ++#");
 
         mapRenderTexture = new RenderTexture((uint)tm.getWidth(), (uint)tm.getHeight());
         menuRenderTexture = new RenderTexture((uint)settings.startScreenWidth, (uint)settings.startScreenHeight);
@@ -456,7 +456,7 @@ class DisplayManager
         return window;
     }
 
-    public void setTileMap(TileMap tm)
+    public void setTileMap(Layer tm)
     {
         tileMap = tm;
         setWhetherViewingTile(false);

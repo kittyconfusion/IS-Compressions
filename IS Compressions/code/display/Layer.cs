@@ -1,13 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Http.Headers;
 using System.Text;
 using System.Threading.Tasks;
+using IS_Compressions.code.display;
 using Map_Generator_CSharp.Source.tiles;
 
 namespace Map_Generator_CSharp.Source.tiles;
 
-class TileMap
+class Layer
 {
     
     private Tile[] tileMap;
@@ -16,25 +18,19 @@ class TileMap
         public int width;
         public int height;
         public string imageType;
+        public int tileSize;
 
     }
 
     private TilemapSettings settings = new TilemapSettings();
 
-    public TileMap(int width, int height)
+    public Layer(int width, int height)
     {
         settings.width = width;
         settings.height = height;
-        tileMap = new Tile[width * height];
-        Random rand = new Random();
-
-        for (int y = 0; y < height; y++)
-        {
-            for (int x = 0; x < width; x++)
-            {
-                tileMap[(width * y) + x] = new Tile(rand);
-            }
-        }
+        int tWidth = (int)Math.Ceiling((float)width / settings.tileSize);
+        int tHeight = (int)Math.Ceiling((float)width / settings.tileSize);
+        tileMap = new Tile[tWidth * tHeight];
 
     }
     public void rerenderTiles(int displayMode)
@@ -55,9 +51,17 @@ class TileMap
     {
         return x >= 0 && x < settings.width && y >= 0 && y < settings.height;
     }
-    public Tile getTile(int x, int y) 
+    public Pixel? GetPixel(int x, int y) 
     {
-        return tileMap[(y * settings.width) + x] ;
+        if (inBounds(x, y))
+        {
+
+        }
+        else
+        {
+            return null;
+        }
+        return tileMap[(y * settings.width) + x].GetPixel(x,y);
     }
 
     public int getWidth() {
