@@ -356,9 +356,7 @@ class DisplayManager
 
         if (tileMap.inBounds(attemptTilePosInt.X,attemptTilePosInt.Y))
         {
-            debugText.DisplayedString += "\t\tX(" + attemptTilePosInt.X + ") Y(" + attemptTilePosInt.Y + ")\t";
-            Color colStr = tileMap.getTile(attemptTilePosInt.X, attemptTilePosInt.Y).getColor();
-            debugText.DisplayedString += "R(" + colStr.R + ") G(" + colStr.G + ") B(" + colStr.B + ")";
+            debugText.DisplayedString += tileMap.getTile(-(int)xOffset, -(int)yOffset).getColor().ToString();
         }
 
         debugText.Position = new Vector2f(-15, getWindowHeight() - debugText.GetGlobalBounds().Height - 10);
@@ -633,6 +631,7 @@ class DisplayManager
     }
     public void setDisplayMode(int mode)
     {
+        Console.WriteLine(mode);
         displaySettings.displayMode = mode;
     }
     public void OnKeyRelease(object sender, KeyEventArgs e)
