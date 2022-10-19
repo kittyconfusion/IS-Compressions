@@ -1,5 +1,8 @@
-﻿using IS_Compressions.code.display;
+﻿using System.Runtime.CompilerServices;
+using System.Xml.Serialization;
+using IS_Compressions.code.display;
 using IS_Compressions.code.formats;
+using IS_Compressions.code.util;
 using Map_Generator_CSharp.Source.tiles;
 using SFML.System;
 using static IS_Compressions.code.display.DisplayManager;
@@ -20,12 +23,18 @@ main();
 
 void main()
 {
+    runBitmap();
+}
+
+
+void runBitmap ()
+{
     Bitmap bmp = new Bitmap(bitPath);
     int width = bmp.width - 1;
     int height = bmp.height;
 
     var initialScreenSize = new Vector2i(1366, 768);
-    
+
     DisplaySettings ds = new DisplaySettings(
         true, // whether to start on the map
         initialScreenSize.X, initialScreenSize.Y, // Screen width and height
@@ -37,14 +46,14 @@ void main()
         0, width * 1, height * 1 // Default display mode
         );
 
-    TileMap tileMap = new TileMap(ds.pixelWidth, ds.pixelHeight);
+    Layer layer1 = new Layer(ds.pixelWidth, ds.pixelHeight, 128);
 
     for (int y = 0; y < height; y++)
     {
         for (int x = 0; x < width; x++)
         {
             //Draw the pixels bottom to top, as is in the format
-            tileMap.getTile(x, height - y - 1).setColor(bmp.getColor(x,y));
+            tileMap.GetPixel(x, height - y - 1).setColor(bmp.getColor(x, y));
         }
 
     }
@@ -52,7 +61,7 @@ void main()
     Clock clock = new Clock();
 
     DisplayManager dm = new DisplayManager(ds, tileMap, path);
-    dm.GetWindow().SetFramerateLimit(30);
+    dm.GetWindow().SetFramerateLimit(60);
     //dm.GetWindow().SetVerticalSyncEnabled(true);
     dm.SetClock(clock);
 
@@ -99,5 +108,21 @@ void main()
             frameCounter = 0;
         }
     }
-
 }
+
+
+/*
+    //Test the huffman decoding
+
+    JPEG j = new JPEG();
+
+    HuffmanTable h;
+
+    string file = @"../../../tests/HuffmanTest";
+    using (var f = new ByteFile(file, 'r',false))
+    {
+        j.bf = f;
+        h = j.InitHuffmanTable();
+    }
+    Console.WriteLine(h);
+*/

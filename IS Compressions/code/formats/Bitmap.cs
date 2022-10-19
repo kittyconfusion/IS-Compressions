@@ -16,7 +16,7 @@ public class Bitmap
     }
     public Bitmap(string file)
     {
-        using (f = new ByteFile(file, 'r'))
+        using (f = new ByteFile(file, 'r', false))
         {
             f.Skip(10);
             //Used to skip rest of metadata

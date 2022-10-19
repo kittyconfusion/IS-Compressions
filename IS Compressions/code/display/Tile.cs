@@ -1,48 +1,62 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
+using Map_Generator_CSharp.Source.tiles;
 using SFML.Graphics;
-using static Map_Generator_CSharp.Source.tiles.TileMap;
+using SFML.System;
 
-namespace Map_Generator_CSharp.Source.tiles;
-
-class Tile
+namespace IS_Compressions.code.display;
+internal class Tile
 {
-    private Color colorCache;
+    private Pixel[] pixels;
 
-    private bool needToRenderColor = true;
+    int width, height;
 
-    public Tile(Random rand)
+    public void Draw(ref List<Vertex> vertices)
     {
-        colorCache = new Color((byte)(int)(rand.NextDouble() * 255), (byte)(int)(rand.NextDouble() * 255), (byte)(int)(rand.NextDouble() * 255));
-    } 
-    public void setColor(Color c)
-    {
-        colorCache = c;
-    }
+        vertices.Clear();
 
-    public Color getColor(int displayMode = 0)
-    {
-        if (needToRenderColor) { renderColor(displayMode); needToRenderColor = false; }
-        switch (displayMode)
+        for (var y = 0; y < height; y++)
         {
-            case 0:
-                return colorCache;
-            case 1:
-                return new Color(colorCache.R, 0, 0);
-            case 2:
-                return new Color(0, colorCache.G, 0);
-            case 3:
-                return new Color(0, 0, colorCache.B);
-            default:
-                return colorCache;
+            for (var x = 0; x < width; x++)
+            {
+
+                var t = GetPixel(x, y);
+                var screenPos = new Vector2f(x, y);
+                //var screenPos = new Vector2f(0, 0);
+                Color col = t.getColor();
+                
+
+                var v = new Vertex(screenPos + new Vector2f(0, 0), col);
+                vertices.Add(v);
+
+                v = new Vertex(screenPos + new Vector2f(1, 0), col);
+                vertices.Add(v);
+
+                v = new Vertex(screenPos + new Vector2f(1, 1), col);
+                vertices.Add(v);
+
+                v = new Vertex(screenPos + new Vector2f(0, 1), col);
+                vertices.Add(v);
+            }
         }
     }
-    public void renderColor(int displayMode)
+    public void Init(int x, int y)
     {
-        colorCache = new Color(colorCache.R, colorCache.G, colorCache.B);
+        width = x;
+        height = y;
+        pixels = new Pixel[width * height];
+    }
+    public Pixel GetPixel(int x, int y)
+    {
+        return pixels[(y * width) + x];
     }
 
-};
+    public void SetPixel(int x, int y, Pixel pixel)
+    {
+        pixels[(y * width) + x] = pixel;
+    }
+}

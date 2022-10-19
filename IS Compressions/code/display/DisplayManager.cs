@@ -35,9 +35,9 @@ class DisplayManager
     private View view;
     private Font font;
 
-    private RenderTexture mapRenderTexture;
-    private RenderTexture overlayRenderTexture;
-    private RenderTexture menuRenderTexture;
+    
+    private OverlayLayer overlay;
+    private LayerHolder layers;
 
     private bool activeMap = false;
     private bool mapNeedsUpdate = false;
@@ -52,7 +52,7 @@ class DisplayManager
 
     private double cameraSpeed, effectiveCameraSpeed;
 
-    private TileMap tileMap;
+    private Layer tileMap;
 
     private string @resourceDir;
 
@@ -74,32 +74,6 @@ class DisplayManager
 
     float scale;
 
-    private List<Vertex> rectPoints = new List<Vertex>(40000);
-
-    public void renderMap(bool active)
-    {
-        activeMap = active;
-    }
-    public void renderMapUI(bool active)
-    {
-        activeMapUI = active;
-    }
-    public void renderMenu(bool active)
-    {
-        activeMenu = active;
-    }
-    public bool renderingMap()
-    {
-        return activeMap;
-    }
-    public bool renderingMapUI()
-    {
-        return activeMapUI;
-    }
-    public bool renderingMenu()
-    {
-        return activeMenu;
-    }
 
     public void SetClock(Clock c)
     {
@@ -107,310 +81,39 @@ class DisplayManager
     }
     private void draw()
     {
-        if (activeMap)
-        {
-            // clear map rendertexture
-            window.Clear(new Color(150, 150, 150));
-            overlayRenderTexture.Clear(new Color(0, 0, 0, 0));
-            menuRenderTexture.Clear(new Color(0, 0, 0, 0));
-
-            // map drawing
-            //drawTiles();
-
-            if (activeMapUI)
-            {
-                if (viewingTile) { drawTileStats(); }
-                drawCoords();
-                //drawControls();
-                drawDebug();
-                drawColorScheme();
-            }
+        // clear map rendertexture
+        window.Clear(new Color(150, 150, 150));
 
 
-            // update map rendertexture
-            mapRenderTexture.Display();
+        // update map rendertexture
+        mapRenderTexture.Display();
+        layers.RenderEntire();
+        layers.Draw();
 
-            // pass rendertexture to window
+        // pass rendertexture to window
 
-            var renderTextureSprite = new Sprite(mapRenderTexture.Texture);
+        var renderTextureSprite = new Sprite(mapRenderTexture.Texture);
 
-            //renderTextureSprite.Scale = ;
-            renderTextureSprite.Position = new Vector2f(xOffset * scale + getWindowWidth() / 2, yOffset * scale + getWindowHeight() / 2);
-            renderTextureSprite.Scale = new Vector2f(scale, scale);
-            window.Draw(renderTextureSprite);
+        //renderTextureSprite.Scale = ;
+        renderTextureSprite.Position = new Vector2f(xOffset * scale + getWindowWidth() / 2, yOffset * scale + getWindowHeight() / 2);
+        renderTextureSprite.Scale = new Vector2f(scale, scale);
+        window.Draw(renderTextureSprite);
 
-            var overlayTextureSprite = new Sprite(overlayRenderTexture.Texture);
-            overlayTextureSprite.TextureRect = new IntRect(0, (int)getWindowHeight(), (int)getWindowWidth(), (int)-getWindowHeight());
-            //overlayTextureSprite.Scale = new Vector2f(1,1);
-            window.Draw(overlayTextureSprite);
-        }
-        if (viewingTile)
-        {
-            menuRenderTexture.Display();
-
-            var renderTextureSprite = new Sprite(menuRenderTexture.Texture);
-            window.Draw(renderTextureSprite);
-        }
-        /*
-        var rect = new RectangleShape(new Vector2f(5, 5));
-        rect.Position = getCameraCenter();
-        rect.FillColor = new Color(255, 0, 0);
-        window.Draw(rect);
-        */
-    }
-    public void drawTiles()
-    {
-
-        //var tileDisplayWidth = (int)(displaySettings.startScreenWidth / tileSize) + 2;
-        //var tileDisplayHeight = (int)(displaySettings.startScreenHeight / tileSize) + 2;
-
-        var width = tileMap.getWidth();
-        var height = tileMap.getHeight();
-
-        rectPoints.Clear();
-
-        for (var y = 0; y < height; y++)
-        {
-            for (var x = 0; x < width; x++)
-            {
-
-                if (!tileMap.inBounds(x, y))
-                {
-                    Console.WriteLine("Not in bounds " + x + " " + y);
-                    continue;
-                }
-                //if (x < 0 || x >= width || y < 0 || y >= height)
-                //{
-                //    continue;
-                //}
-
-                var t = tileMap.getTile(x, y);
-                var screenPos = new Vector2f(x, y);
-                //var screenPos = new Vector2f(0, 0);
-                Color col;
-
-                if (viewingTile == true && viewTileCoords.X == x && viewTileCoords.Y == y && activeMapUI)
-                {
-                    col = new Color(255, 100, 100);
-                }
-                else
-                {
-
-                    col = t.getColor(getDisplayMode());
-                }
-
-                var v = new Vertex(screenPos + new Vector2f(0, 0), col);
-                rectPoints.Add(v);
-
-                v = new Vertex(screenPos + new Vector2f(1, 0), col);
-                rectPoints.Add(v);
-
-                v = new Vertex(screenPos + new Vector2f(1, 1), col);
-                rectPoints.Add(v);
-
-                v = new Vertex(screenPos + new Vector2f(0, 1), col);
-                rectPoints.Add(v);
-            }
-            if (rectPoints.Count >= 40000)
-            {
-                mapRenderTexture.Draw(rectPoints.ToArray(), PrimitiveType.Quads);
-                rectPoints.Clear();
-                //rectPoints = new List<Vertex>(10000);
-            }
-        }
-        //mapRenderTexture.Draw()
-        mapRenderTexture.Draw(rectPoints.ToArray(), PrimitiveType.Quads);
-        draw();
-    }
-    private void drawTileStats()
-    {
-
-        var viewTile = tileMap.getTile(viewTileCoords.X, viewTileCoords.Y);
-
-        var featureText = "This is text";
-
-        var offset = 5;
-        var fontSize = 30; // Pixels
-
-        var xSize = (int)(13.5 * fontSize);
-        var ySize = 4 * fontSize + 6 * offset;
-
-        var size = new Vector2f(xSize, ySize);
-        var rect = new RoundedRectangleShape(size, 5, 5);
-        rect.FillColor = new Color(100, 100, 100);
-        rect.Position = viewTileDisplayCoords;
-
-        menuRenderTexture.Draw(rect);
-
-        var text = new Text();
-        text.Font = font;
-        text.CharacterSize = (uint)fontSize;
-        text.FillColor = new Color((byte)displaySettings.baseR, (byte)displaySettings.baseG, (byte)displaySettings.baseB);
-        text.OutlineThickness = 2;
-        text.OutlineColor = new Color((byte)displaySettings.outR, (byte)displaySettings.outG, (byte)displaySettings.outB);
-
-        text.Style = Text.Styles.Bold | Text.Styles.Underlined;
-        text.Position = new Vector2f(viewTileDisplayCoords.X + offset, viewTileDisplayCoords.Y + offset);
-        text.DisplayedString = "Tile (" + viewTileCoords.X + "," + viewTileCoords.Y + ")" + (featureText != "" ? " - " + featureText : "");
-        menuRenderTexture.Draw(text);
-        text.Style = Text.Styles.Regular;
-        
-        text.Position = new Vector2f(text.Position.X, text.Position.Y + fontSize + offset);
-        text.DisplayedString = "R " + viewTile.getColor().R +
-                             "\nG " + viewTile.getColor().G +
-                             "\nG " + viewTile.getColor().B;
-
-        menuRenderTexture.Draw(text);
+        var overlayTextureSprite = new Sprite(overlayRenderTexture.Texture);
+        overlayTextureSprite.TextureRect = new IntRect(0, (int)getWindowHeight(), (int)getWindowWidth(), (int)-getWindowHeight());
+        //overlayTextureSprite.Scale = new Vector2f(1,1);
+        window.Draw(overlayTextureSprite);
     }
 
-    private void drawCoords()
-    {
-        var coordText = new Text();
-        coordText.Font = font;
-
-        //Coords are in the middle of the screen
-        var coords = new Vector2f(-xOffset, -yOffset);
-
-        //Vector2f mouseCoords = new Vector2f(Mouse.GetPosition().X - window.Position.X, Mouse.GetPosition().Y - window.Position.Y);
-        //Vector2f coords = (mouseCoords + new Vector2f(xOffset, yOffset)) / scale;
-
-        coordText.DisplayedString = "(" + (int)coords.X + ", " + (int)coords.Y + ")";
-
-
-        coordText.CharacterSize = 50; // Pixels, not normal font size
-        coordText.FillColor = new Color((byte)displaySettings.baseR, (byte)displaySettings.baseG, (byte)displaySettings.baseB); // Color
-
-        coordText.OutlineThickness = 2;
-        coordText.OutlineColor = new Color((byte)displaySettings.outR, (byte)displaySettings.outG, (byte)displaySettings.outB);
-
-        coordText.Style = Text.Styles.Bold;
-
-
-        coordText.Position = new Vector2f(10, 10);
-        overlayRenderTexture.Draw(coordText);
-    }
-    private void drawControls()
-    {
-        var controlText = new Text();
-        controlText.Font = font;
-        if (Keyboard.IsKeyPressed(Keyboard.Key.H))
-        {
-            controlText.DisplayedString = "WASD/arrows/click-and-drag to move. \nShift/Control to go faster/slower. \nC/V to change display mode.\nF1 to toggle UI.";
-        }
-        else
-        {
-            controlText.DisplayedString = "H for controls.";
-        }
-
-        controlText.CharacterSize = 30; // Pixels, not normal font size
-        controlText.FillColor = new Color((byte)displaySettings.baseR, (byte)displaySettings.baseG, (byte)displaySettings.baseB); // Color
-
-        controlText.OutlineThickness = 2;
-        controlText.OutlineColor = new Color((byte)displaySettings.outR, (byte)displaySettings.outG, (byte)displaySettings.outB);
-
-        controlText.Style = Text.Styles.Bold;
-
-
-        controlText.Position = new Vector2f(10, 110);
-        overlayRenderTexture.Draw(controlText);
-    }
-    private void drawDebug()
-    {
-        var debugText = new Text();
-        debugText.Font = font;
-
-        debugText.DisplayedString = fps.ToString();
-
-
-        debugText.CharacterSize = 40; // Pixels, not normal font size
-        debugText.FillColor = new Color(0, 255, 0); // Color
-
-        debugText.OutlineThickness = 2;
-        debugText.OutlineColor = new Color(0, 0, 0);
-
-        debugText.Style = Text.Styles.Bold;
-
-
-        debugText.Position = new Vector2f(getWindowWidth() - debugText.GetGlobalBounds().Width - 10, 10);
-        overlayRenderTexture.Draw(debugText);
-
-        //debugText.DisplayedString = tileMap.getSeed().ToString();
-
-        debugText.FillColor = new Color(255, 255, 255);
-
-        debugText.CharacterSize = 24;
-
-        //debugText.Position = new Vector2f(displaySettings.startScreenWidth - debugText.GetGlobalBounds().Width - 10, 70);
-        //overlayRenderTexture.Draw(debugText);
-
-        debugText.DisplayedString = "(\t" + tileMap.GetSettings().width + " x " + tileMap.GetSettings().height;
-
-        //Get the current position of the mouse relative to the window
-        Vector2f mouseCoords = new Vector2f(Mouse.GetPosition().X - window.Position.X, Mouse.GetPosition().Y - window.Position.Y - 32);
-        //Find the tile the mouse is currently hovering over
-        Vector2f attemptTilePos = new Vector2f((mouseCoords.X / scale) - xOffset, ((mouseCoords.Y / scale) - yOffset));
-        //Account for map centering in the middle of the screen instead of the top right corner
-        attemptTilePos -= new Vector2f((float)getWindowWidth() / 2 / scale, (float)getWindowHeight() / 2 / scale);
-
-        Vector2i attemptTilePosInt = new Vector2i((int)attemptTilePos.X, (int)attemptTilePos.Y);
-
-        if (tileMap.inBounds(attemptTilePosInt.X,attemptTilePosInt.Y))
-        {
-            debugText.DisplayedString += tileMap.getTile(-(int)xOffset, -(int)yOffset).getColor().ToString();
-        }
-
-        debugText.Position = new Vector2f(-15, getWindowHeight() - debugText.GetGlobalBounds().Height - 10);
-        overlayRenderTexture.Draw(debugText);
-    }
-    private void drawColorScheme()
-    {
-        var colorSchemeText = new Text();
-        colorSchemeText.Font = font;
-
-        switch (displaySettings.displayMode)
-        {
-            case 0:
-                colorSchemeText.DisplayedString = "";
-                break;
-            case 1:
-                colorSchemeText.DisplayedString = "Red";
-                break;
-            case 2:
-                colorSchemeText.DisplayedString = "Green";
-                break;
-            case 3:
-                colorSchemeText.DisplayedString = "Blue";
-                break;
-            default:
-                colorSchemeText.DisplayedString = "Invalid display setting!";
-                break;
-        }
-
-
-        colorSchemeText.CharacterSize = 40; // Pixels, not normal font size
-        colorSchemeText.FillColor = new Color((byte)displaySettings.baseR, (byte)displaySettings.baseG, (byte)displaySettings.baseB); // Color
-
-        colorSchemeText.OutlineThickness = 2;
-        colorSchemeText.OutlineColor = new Color((byte)displaySettings.outR, (byte)displaySettings.outG, (byte)displaySettings.outB);
-
-        colorSchemeText.Style = Text.Styles.Bold;
-
-
-        colorSchemeText.Position = new Vector2f(getWindowWidth() - colorSchemeText.GetGlobalBounds().Width - 10, getWindowHeight() - colorSchemeText.GetGlobalBounds().Height - 20);
-        overlayRenderTexture.Draw(colorSchemeText);
-    }
     double getTilesShown()
     {
         return Math.Max(displaySettings.startScreenWidth, displaySettings.startScreenHeight);
     }
 
-    public DisplayManager(DisplaySettings settings, TileMap tm, string rDir)
+    public DisplayManager(DisplaySettings settings, Layer tm, string rDir)
     {
-        window = new RenderWindow(new VideoMode((uint)settings.startScreenWidth, (uint)settings.startScreenHeight), "Cat Viewer Deluxe Extreme Edition ++");
+        window = new RenderWindow(new VideoMode((uint)settings.startScreenWidth, (uint)settings.startScreenHeight), "Cat Viewer Deluxe Extreme Edition ++#");
 
-        mapRenderTexture = new RenderTexture((uint)tm.getWidth(), (uint)tm.getHeight());
-        menuRenderTexture = new RenderTexture((uint)settings.startScreenWidth, (uint)settings.startScreenHeight);
-        overlayRenderTexture = new RenderTexture((uint)settings.startScreenWidth, (uint)settings.startScreenHeight);
 
         view = new View();
         view.Center = new Vector2f(settings.startScreenWidth / 2, settings.startScreenHeight / 2);
@@ -454,7 +157,7 @@ class DisplayManager
         return window;
     }
 
-    public void setTileMap(TileMap tm)
+    public void setTileMap(Layer tm)
     {
         tileMap = tm;
         setWhetherViewingTile(false);
@@ -631,7 +334,6 @@ class DisplayManager
     }
     public void setDisplayMode(int mode)
     {
-        Console.WriteLine(mode);
         displaySettings.displayMode = mode;
     }
     public void OnKeyRelease(object sender, KeyEventArgs e)
@@ -686,7 +388,7 @@ class DisplayManager
 
         else if (e.Code == Keyboard.Key.F1)
         {
-            renderMapUI(!renderingMapUI());
+            activeMapUI = !activeMapUI;
         }
 
     }
