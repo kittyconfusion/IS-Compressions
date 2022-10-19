@@ -6,14 +6,16 @@ using System.Text;
 using System.Threading.Tasks;
 using IS_Compressions.code.display;
 using Map_Generator_CSharp.Source.tiles;
+using SFML.Graphics;
 
 namespace Map_Generator_CSharp.Source.tiles;
 
 class Layer
 {
-    
     private Tile[] tileMap;
-    public struct TilemapSettings
+
+    private int width, height;
+    public struct LayerSettings
     {
         public int width;
         public int height;
@@ -22,28 +24,41 @@ class Layer
 
     }
 
-    private TilemapSettings settings = new TilemapSettings();
+    private LayerSettings settings = new LayerSettings();
 
-    public Layer(int width, int height)
+    private List<Vertex> rectPoints;
+
+    public Layer(int width, int height, int tileSize)
     {
         settings.width = width;
         settings.height = height;
+        settings.tileSize = tileSize;
+        rectPoints = new List<Vertex>(tileSize * tileSize);
+
         int tWidth = (int)Math.Ceiling((float)width / settings.tileSize);
         int tHeight = (int)Math.Ceiling((float)width / settings.tileSize);
         tileMap = new Tile[tWidth * tHeight];
-
-    }
-    public void rerenderTiles(int displayMode)
-    {
-        for (int x = 0; x < settings.width; x++)
+        foreach (Tile tile in tileMap)
         {
-            for (int y = 0; y < settings.height; y++)
-            {
-                getTile(x, y).renderColor(displayMode);
-            }
+            tile.Init(tWidth, tHeight);
         }
     }
-    public TilemapSettings GetSettings()
+
+    public void Render(ref RenderTexture renderTexture)
+    {
+        foreach(Tile tile in tileMap)
+        {
+            tile.Draw(ref rectPoints);
+            renderTexture.Draw(rectPoints.ToArray(), PrimitiveType.Quads);
+        }
+    }
+
+    public void RenderOnScreen()
+    {
+       
+    }
+
+    public LayerSettings GetSettings()
     {
         return settings;
     }
@@ -51,11 +66,23 @@ class Layer
     {
         return x >= 0 && x < settings.width && y >= 0 && y < settings.height;
     }
+    public Tile? GetPixelTile(int x, int y)
+    {
+        if (inBounds(x, y))
+        {
+            return tileMap[(x / settings.tileSize) + ((y / settings.tileSize) * (int)Math.Ceiling((float)width / settings.tileSize))];
+        }
+        else
+        {
+            return null;
+        }
+    }
     public Pixel? GetPixel(int x, int y) 
     {
         if (inBounds(x, y))
         {
-
+            Tile t = tileMap[(x / settings.tileSize) + ((y / settings.tileSize) * (int)Math.Ceiling((float)width / settings.tileSize))];
+            return t.GetPixel(x - (settings.tileSize * (x / settings.tileSize)),y - (y * (settings.tileSize / settings.tileSize)));
         }
         else
         {

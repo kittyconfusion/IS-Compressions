@@ -46,14 +46,14 @@ void runBitmap ()
         0, width * 1, height * 1 // Default display mode
         );
 
-    Layer tileMap = new Layer(ds.pixelWidth, ds.pixelHeight);
+    Layer layer1 = new Layer(ds.pixelWidth, ds.pixelHeight, 128);
 
     for (int y = 0; y < height; y++)
     {
         for (int x = 0; x < width; x++)
         {
             //Draw the pixels bottom to top, as is in the format
-            tileMap.getTile(x, height - y - 1).setColor(bmp.getColor(x, y));
+            tileMap.GetPixel(x, height - y - 1).setColor(bmp.getColor(x, y));
         }
 
     }
