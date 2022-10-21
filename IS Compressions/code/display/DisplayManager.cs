@@ -52,8 +52,6 @@ class DisplayManager
 
     private double cameraSpeed, effectiveCameraSpeed;
 
-    private Layer tileMap;
-
     private string @resourceDir;
 
     Clock clock;
@@ -79,27 +77,25 @@ class DisplayManager
     {
         clock = c;
     }
-    private void draw()
+    private void Draw()
     {
         // clear map rendertexture
         window.Clear(new Color(150, 150, 150));
 
 
-        // update map rendertexture
-        mapRenderTexture.Display();
-        layers.RenderEntire();
         layers.Draw();
+        overlay.Draw(xOffset,yOffset,fps);
 
         // pass rendertexture to window
 
-        var renderTextureSprite = new Sprite(mapRenderTexture.Texture);
+        var renderTextureSprite = new Sprite(layers.screenRenderTexture.Texture);
 
         //renderTextureSprite.Scale = ;
         renderTextureSprite.Position = new Vector2f(xOffset * scale + getWindowWidth() / 2, yOffset * scale + getWindowHeight() / 2);
         renderTextureSprite.Scale = new Vector2f(scale, scale);
         window.Draw(renderTextureSprite);
-
-        var overlayTextureSprite = new Sprite(overlayRenderTexture.Texture);
+        
+        var overlayTextureSprite = new Sprite(overlay.overlayRenderTexture.Texture);
         overlayTextureSprite.TextureRect = new IntRect(0, (int)getWindowHeight(), (int)getWindowWidth(), (int)-getWindowHeight());
         //overlayTextureSprite.Scale = new Vector2f(1,1);
         window.Draw(overlayTextureSprite);
@@ -110,7 +106,7 @@ class DisplayManager
         return Math.Max(displaySettings.startScreenWidth, displaySettings.startScreenHeight);
     }
 
-    public DisplayManager(DisplaySettings settings, Layer tm, string rDir)
+    public DisplayManager(DisplaySettings settings, Layer backLayer, string rDir)
     {
         window = new RenderWindow(new VideoMode((uint)settings.startScreenWidth, (uint)settings.startScreenHeight), "Cat Viewer Deluxe Extreme Edition ++#");
 
@@ -121,17 +117,7 @@ class DisplayManager
 
         window.SetView(view);
 
-        if (settings.mapStartEnabled)
-        {
-            activeMap = true;
-            activeMapUI = true;
-        }
-        else
-            activeMenu = true;
-
         displaySettings = settings;
-
-        tileMap = tm;
 
         resourceDir = rDir;
 
@@ -143,6 +129,9 @@ class DisplayManager
 
         loadFont();
         loadIcon();
+
+        layers = new LayerHolder(backLayer);
+        overlay = new OverlayLayer(settings, ref window, ref font);
 
         // How many seconds does it take to move across one screen with the camera?
         double cameraSecondsPerScreen = 2;
@@ -157,11 +146,6 @@ class DisplayManager
         return window;
     }
 
-    public void setTileMap(Layer tm)
-    {
-        tileMap = tm;
-        setWhetherViewingTile(false);
-    }
     private string mergePaths(string pathA, string pathB)
     {
         return @pathA + @pathB;
@@ -173,9 +157,7 @@ class DisplayManager
 
     private void loadFont()
     {
-
         font = new Font(getResourcePath("font.ttf"));
-
     }
 
     private void loadIcon()
@@ -219,13 +201,13 @@ class DisplayManager
         window.SetView(view);
 
         //mapRenderTexture = new RenderTexture((uint)displaySettings.startScreenWidth, (uint)displaySettings.startScreenHeight);
-        menuRenderTexture = new RenderTexture((uint)displaySettings.startScreenWidth, (uint)displaySettings.startScreenHeight);
-        overlayRenderTexture = new RenderTexture((uint)displaySettings.startScreenWidth, (uint)displaySettings.startScreenHeight);
+        overlay.Resize((uint)displaySettings.startScreenWidth, (uint)displaySettings.startScreenHeight);
+        layers.Resize((uint)displaySettings.startScreenWidth, (uint)displaySettings.startScreenHeight);
     }
-    public void display()
+    public void Display()
     {
         window.Clear();
-        draw();
+        Draw();
         window.Display();
     }
 
@@ -370,14 +352,14 @@ class DisplayManager
         else if (e.Code == Keyboard.Key.C)
         {
             setDisplayMode((getDisplayMode() + 3) % 4);
-            tileMap.rerenderTiles(getDisplayMode());
-            drawTiles();
+            //tileMap.rerenderTiles(getDisplayMode());
+            //drawTiles();
         }
         else if (e.Code == Keyboard.Key.V)
         {
             setDisplayMode((getDisplayMode() + 1) % 4);
-            tileMap.rerenderTiles(getDisplayMode());
-            drawTiles();
+            //tileMap.rerenderTiles(getDisplayMode());
+            //drawTiles();
         }
 
         // exits tile view

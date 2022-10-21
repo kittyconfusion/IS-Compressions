@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Drawing.Printing;
 using System.Linq;
 using System.Net.Http.Headers;
 using System.Text;
@@ -14,13 +15,15 @@ class Layer
 {
     private Tile[] tileMap;
 
-    private int width, height;
     public struct LayerSettings
     {
         public int width;
         public int height;
         public string imageType;
         public int tileSize;
+        public bool visible;
+        public int xOffset;
+        public int yOffset;
 
     }
 
@@ -33,22 +36,29 @@ class Layer
         settings.width = width;
         settings.height = height;
         settings.tileSize = tileSize;
-        rectPoints = new List<Vertex>(tileSize * tileSize);
+        settings.xOffset = 0;
+        settings.yOffset = 0;
+        rectPoints = new List<Vertex>(tileSize * tileSize  *  4);
 
         int tWidth = (int)Math.Ceiling((float)width / settings.tileSize);
-        int tHeight = (int)Math.Ceiling((float)width / settings.tileSize);
+        int tHeight = (int)Math.Ceiling((float)height / settings.tileSize);
         tileMap = new Tile[tWidth * tHeight];
-        foreach (Tile tile in tileMap)
+        for(int i = 0; i < tileMap.Length; i++)
         {
-            tile.Init(tWidth, tHeight);
+            tileMap[i] = new Tile();
+            tileMap[i].Init(tileSize, tileSize, i % tWidth, i / tWidth);
         }
-    }
 
+
+        settings.visible = true;
+        //Console.WriteLine(tileMap.Length);
+    }
+    
     public void Render(ref RenderTexture renderTexture)
     {
         foreach(Tile tile in tileMap)
         {
-            tile.Draw(ref rectPoints);
+            tile.Draw(ref rectPoints, settings.xOffset, settings.yOffset);
             renderTexture.Draw(rectPoints.ToArray(), PrimitiveType.Quads);
         }
     }
@@ -70,7 +80,7 @@ class Layer
     {
         if (inBounds(x, y))
         {
-            return tileMap[(x / settings.tileSize) + ((y / settings.tileSize) * (int)Math.Ceiling((float)width / settings.tileSize))];
+            return tileMap[(x / settings.tileSize) + ((y / settings.tileSize) * (int)Math.Ceiling((float)settings.width / settings.tileSize))];
         }
         else
         {
@@ -79,23 +89,29 @@ class Layer
     }
     public Pixel? GetPixel(int x, int y) 
     {
+        int pixelX = x % settings.tileSize;// - (settings.tileSize * (x / settings.tileSize));
+        int pixelY = y % settings.tileSize;// - (y * (settings.tileSize / settings.tileSize));
+
         if (inBounds(x, y))
         {
-            Tile t = tileMap[(x / settings.tileSize) + ((y / settings.tileSize) * (int)Math.Ceiling((float)width / settings.tileSize))];
-            return t.GetPixel(x - (settings.tileSize * (x / settings.tileSize)),y - (y * (settings.tileSize / settings.tileSize)));
+            int tileIndex = (x / settings.tileSize) + ((y / settings.tileSize) * (int)Math.Ceiling((float)settings.width / settings.tileSize));
+            //Console.WriteLine(x + " " + y + " " + tileIndex + " " + (float)width / settings.tileSize + " " + (y / settings.tileSize));
+            //Console.WriteLine(settings.width);
+            return tileMap[tileIndex].GetPixel(pixelX, pixelY);
         }
         else
         {
+            Console.WriteLine("Tried to get nonexistant pixel at (" + pixelX + ", " + pixelY + ")");
             return null;
         }
-        return tileMap[(y * settings.width) + x].GetPixel(x,y);
+        //return tileMap[(y * settings.width) + x].GetPixel(x,y);
     }
 
-    public int getWidth() {
+    public int GetWidth() {
         return settings.width;
     }
 
-    public int getHeight() {
+    public int GetHeight() {
         return settings.height;
     }
 

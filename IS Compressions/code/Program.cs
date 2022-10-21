@@ -4,13 +4,14 @@ using IS_Compressions.code.display;
 using IS_Compressions.code.formats;
 using IS_Compressions.code.util;
 using Map_Generator_CSharp.Source.tiles;
+using SFML.Graphics;
 using SFML.System;
 using static IS_Compressions.code.display.DisplayManager;
 
 string inPath = @"../../../resources/apollosmall256.bmp";
 string outPath = @"../../../resources/out.cop";
 
-string bitPath = @"../../../resources/apollo24bmid.bmp";
+string bitPath = @"../../../resources/apollo24bsma.bmp";
 
 string RunningPath = AppDomain.CurrentDomain.BaseDirectory;
 string path = string.Format("{0}Resources\\", Path.GetFullPath(Path.Combine(RunningPath, @"..\..\..\")));
@@ -46,21 +47,24 @@ void runBitmap ()
         0, width * 1, height * 1 // Default display mode
         );
 
-    Layer layer1 = new Layer(ds.pixelWidth, ds.pixelHeight, 128);
+    Layer layer1 = new Layer(ds.pixelWidth, ds.pixelHeight, 64);
 
     for (int y = 0; y < height; y++)
     {
         for (int x = 0; x < width; x++)
         {
             //Draw the pixels bottom to top, as is in the format
-            tileMap.GetPixel(x, height - y - 1).setColor(bmp.getColor(x, y));
+            //Console.WriteLine("(" + x + "," + (height - y - 1) + ") ");
+            //layer1.GetPixel(0, 0);
+            //Console.WriteLine("Setting color for (" + x + ", " + (height - y - 1) + ")");
+            layer1.GetPixel(x, height - y - 1).SetColor(bmp.getColor(x, y));
         }
 
     }
-
+    
     Clock clock = new Clock();
 
-    DisplayManager dm = new DisplayManager(ds, tileMap, path);
+    DisplayManager dm = new DisplayManager(ds, layer1, path);
     dm.GetWindow().SetFramerateLimit(60);
     //dm.GetWindow().SetVerticalSyncEnabled(true);
     dm.SetClock(clock);
@@ -80,14 +84,14 @@ void runBitmap ()
     double FPSUpdateFreq = 0.1; // How often to update the FPS display (in seconds)
     int frameCounter = 0;
 
-    dm.drawTiles();
+    dm.Display();
 
     while (dm.isOpen())
     {
         window.DispatchEvents();
         dm.Move();
 
-        dm.display();
+        dm.Display();
 
         // frame-locked actions
 

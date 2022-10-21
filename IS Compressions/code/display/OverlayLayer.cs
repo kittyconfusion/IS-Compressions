@@ -12,17 +12,28 @@ namespace IS_Compressions.code.display;
 internal class OverlayLayer
 {
     internal RenderTexture overlayRenderTexture;
-    private DisplaySettings displaySettings;
-    private Window window;
+    private DisplaySettings settings;
+    private RenderWindow window;
     Font font;
 
-    public void Draw(float xOffset, float yOffset)
+    public OverlayLayer(DisplaySettings settings, ref RenderWindow window, ref Font font)
+    {
+        this.settings = settings;
+        this.window = window;
+        this.font = font;
+        this.overlayRenderTexture = new RenderTexture((uint)settings.startScreenWidth, (uint)settings.startScreenHeight);
+    }
+    public void Resize(uint x, uint y)
+    {
+        overlayRenderTexture = new RenderTexture(x, y);
+    }
+    public void Draw(float xOffset, float yOffset, int fps)
     {
         overlayRenderTexture.Clear(new Color(0, 0, 0, 0));
         drawCoords(xOffset, yOffset);
         drawControls();
         drawColorScheme();
-        //drawDebug();
+        drawDebug(fps);
     }
     private void drawCoords(float xOffset, float yOffset)
     {
@@ -34,10 +45,10 @@ internal class OverlayLayer
 
         coordText.DisplayedString = "(" + (int)coords.X + ", " + (int)coords.Y + ")";
         coordText.CharacterSize = 50; // Pixels, not normal font size
-        coordText.FillColor = new Color((byte)displaySettings.baseR, (byte)displaySettings.baseG, (byte)displaySettings.baseB); // Color
+        coordText.FillColor = new Color((byte)settings.baseR, (byte)settings.baseG, (byte)settings.baseB); // Color
 
         coordText.OutlineThickness = 2;
-        coordText.OutlineColor = new Color((byte)displaySettings.outR, (byte)displaySettings.outG, (byte)displaySettings.outB);
+        coordText.OutlineColor = new Color((byte)settings.outR, (byte)settings.outG, (byte)settings.outB);
         coordText.Style = Text.Styles.Bold;
 
 
@@ -57,18 +68,18 @@ internal class OverlayLayer
             controlText.DisplayedString = "H for controls.";
         }
         controlText.CharacterSize = 30; // Pixels, not normal font size
-        controlText.FillColor = new Color((byte)displaySettings.baseR, (byte)displaySettings.baseG, (byte)displaySettings.baseB); // Color
+        controlText.FillColor = new Color((byte)settings.baseR, (byte)settings.baseG, (byte)settings.baseB); // Color
 
         controlText.OutlineThickness = 2;
-        controlText.OutlineColor = new Color((byte)displaySettings.outR, (byte)displaySettings.outG, (byte)displaySettings.outB);
+        controlText.OutlineColor = new Color((byte)settings.outR, (byte)settings.outG, (byte)settings.outB);
         controlText.Style = Text.Styles.Bold;
 
 
         controlText.Position = new Vector2f(10, 110);
         overlayRenderTexture.Draw(controlText);
     }
-    /*
-    private void drawDebug()
+    
+    private void drawDebug(int fps)
     {
         var debugText = new Text();
         debugText.Font = font;
@@ -76,30 +87,31 @@ internal class OverlayLayer
         debugText.DisplayedString = fps.ToString();
 
 
-        debugText.CharacterSize = 40; // Pixels, not normal font size
-        debugText.FillColor = new Color(0, 255, 0); // Color
+        debugText.CharacterSize = 26; // Pixels, not normal font size
+        debugText.FillColor = new Color(255, 255, 255); // Color
 
         debugText.OutlineThickness = 2;
         debugText.OutlineColor = new Color(0, 0, 0);
 
         debugText.Style = Text.Styles.Bold;
 
-
-        debugText.Position = new Vector2f(getWindowWidth() - debugText.GetGlobalBounds().Width - 10, 10);
+        
+        debugText.Position = new Vector2f(window.Size.X - debugText.GetGlobalBounds().Width - 10, 10);
         overlayRenderTexture.Draw(debugText);
-
+        /*
         debugText.FillColor = new Color(255, 255, 255);
 
         debugText.CharacterSize = 24;
+        
+        debugText.DisplayedString = "(\t" + "WIP"; //"tileMap.GetSettings().width + " x " + tileMap.GetSettings().height;
 
-        debugText.DisplayedString = "(\t" + tileMap.GetSettings().width + " x " + tileMap.GetSettings().height;
-
+        
         //Get the current position of the mouse relative to the window
         Vector2f mouseCoords = new Vector2f(Mouse.GetPosition().X - window.Position.X, Mouse.GetPosition().Y - window.Position.Y - 32);
         //Find the tile the mouse is currently hovering over
         Vector2f attemptTilePos = new Vector2f((mouseCoords.X / scale) - xOffset, ((mouseCoords.Y / scale) - yOffset));
         //Account for map centering in the middle of the screen instead of the top right corner
-        attemptTilePos -= new Vector2f((float)getWindowWidth() / 2 / scale, (float)getWindowHeight() / 2 / scale);
+        attemptTilePos -= new Vector2f((float)window.Size.X / 2 / scale, (float)window.Size.Y() / 2 / scale);
 
         Vector2i attemptTilePosInt = new Vector2i((int)attemptTilePos.X, (int)attemptTilePos.Y);
 
@@ -111,15 +123,16 @@ internal class OverlayLayer
         }
 
         debugText.Position = new Vector2f(-15, getWindowHeight() - debugText.GetGlobalBounds().Height - 10);
+        */
         overlayRenderTexture.Draw(debugText);
     }
-    */
+    
     private void drawColorScheme()
     {
         var colorSchemeText = new Text();
         colorSchemeText.Font = font;
 
-        switch (displaySettings.displayMode)
+        switch (settings.displayMode)
         {
             case 0:
                 colorSchemeText.DisplayedString = "";
@@ -138,10 +151,10 @@ internal class OverlayLayer
                 break;
         }
         colorSchemeText.CharacterSize = 40; // Pixels, not normal font size
-        colorSchemeText.FillColor = new Color((byte)displaySettings.baseR, (byte)displaySettings.baseG, (byte)displaySettings.baseB); // Color
+        colorSchemeText.FillColor = new Color((byte)settings.baseR, (byte)settings.baseG, (byte)settings.baseB); // Color
 
         colorSchemeText.OutlineThickness = 2;
-        colorSchemeText.OutlineColor = new Color((byte)displaySettings.outR, (byte)displaySettings.outG, (byte)displaySettings.outB);
+        colorSchemeText.OutlineColor = new Color((byte)settings.outR, (byte)settings.outG, (byte)settings.outB);
         colorSchemeText.Style = Text.Styles.Bold;
 
 
@@ -176,9 +189,9 @@ internal class OverlayLayer
         var text = new Text();
         text.Font = font;
         text.CharacterSize = (uint)fontSize;
-        text.FillColor = new Color((byte)displaySettings.baseR, (byte)displaySettings.baseG, (byte)displaySettings.baseB);
+        text.FillColor = new Color((byte)settings.baseR, (byte)settings.baseG, (byte)settings.baseB);
         text.OutlineThickness = 2;
-        text.OutlineColor = new Color((byte)displaySettings.outR, (byte)displaySettings.outG, (byte)displaySettings.outB);
+        text.OutlineColor = new Color((byte)settings.outR, (byte)settings.outG, (byte)settings.outB);
 
         text.Style = Text.Styles.Bold | Text.Styles.Underlined;
         text.Position = new Vector2f(viewTileDisplayCoords.X + offset, viewTileDisplayCoords.Y + offset);

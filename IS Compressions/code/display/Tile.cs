@@ -14,8 +14,9 @@ internal class Tile
     private Pixel[] pixels;
 
     int width, height;
+    int xLoc, yLoc;
 
-    public void Draw(ref List<Vertex> vertices)
+    public void Draw(ref List<Vertex> vertices, int xOffset, int yOffset)
     {
         vertices.Clear();
 
@@ -25,11 +26,10 @@ internal class Tile
             {
 
                 var t = GetPixel(x, y);
-                var screenPos = new Vector2f(x, y);
+                var screenPos = new Vector2f((xLoc * width) + x + xOffset, (yLoc * height) + y + yOffset);
                 //var screenPos = new Vector2f(0, 0);
-                Color col = t.getColor();
+                Color col = t.GetColor();
                 
-
                 var v = new Vertex(screenPos + new Vector2f(0, 0), col);
                 vertices.Add(v);
 
@@ -44,14 +44,22 @@ internal class Tile
             }
         }
     }
-    public void Init(int x, int y)
+    public void Init(int width, int height, int xLoc, int yLoc)
     {
-        width = x;
-        height = y;
+        Console.WriteLine("Tile initiating with size (" + width + ", " + height + ") and location (" + xLoc + ", " + yLoc + ")");
+        this.width = width;
+        this.height = height;
+        this.xLoc = xLoc;
+        this.yLoc = yLoc;
         pixels = new Pixel[width * height];
+        for(int i = 0; i < pixels.Length; i++)
+        {
+            pixels[i] = new Pixel();
+        }
     }
     public Pixel GetPixel(int x, int y)
     {
+        //Console.WriteLine(pixels.Length + " Attempted to access " + ((y * width) + x));
         return pixels[(y * width) + x];
     }
 

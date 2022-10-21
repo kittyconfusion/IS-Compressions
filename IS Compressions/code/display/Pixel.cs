@@ -16,16 +16,17 @@ internal class Pixel
 
     public Pixel()
     {
-        colorCache = new Color(0,0,0,0);
+        //colorCache = new Color(0,0,0,0);
+        colorCache = new Color(100, 100, 200);
     } 
-    public void setColor(Color c)
+    public void SetColor(Color c)
     {
         colorCache = c;
     }
 
-    public Color getColor(int displayMode = 0)
+    public Color GetColor(int displayMode = 0)
     {
-        if (needToRenderColor) { renderColor(displayMode); needToRenderColor = false; }
+        if (needToRenderColor) { RenderColor(displayMode); needToRenderColor = false; }
         switch (displayMode)
         {
             case 0:
@@ -40,7 +41,7 @@ internal class Pixel
                 return colorCache;
         }
     }
-    public void renderColor(int displayMode)
+    public void RenderColor(int displayMode)
     {
         colorCache = new Color(colorCache.R, colorCache.G, colorCache.B, 255);
     }
