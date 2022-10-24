@@ -16,8 +16,8 @@ internal class Pixel
 
     public Pixel()
     {
-        //colorCache = new Color(0,0,0,0);
-        colorCache = new Color(100, 100, 200);
+        colorCache = new Color(0,0,0,255);
+        //colorCache = new Color(100, 100, 200);
     } 
     public void SetColor(Color c)
     {

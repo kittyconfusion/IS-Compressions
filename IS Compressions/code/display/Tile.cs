@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Map_Generator_CSharp.Source.tiles;
 using SFML.Graphics;
 using SFML.System;
+using static Map_Generator_CSharp.Source.tiles.Layer;
 
 namespace IS_Compressions.code.display;
 internal class Tile
@@ -16,7 +17,7 @@ internal class Tile
     int width, height;
     int xLoc, yLoc;
 
-    public void Draw(ref List<Vertex> vertices, int xOffset, int yOffset)
+    public void Draw(ref List<Vertex> vertices, LayerSettings settings, ref ColorCache renderCache)
     {
         vertices.Clear();
 
@@ -24,12 +25,17 @@ internal class Tile
         {
             for (var x = 0; x < width; x++)
             {
-
+                var screenPos = new Vector2f((xLoc * width) + x + settings.xOffset, (yLoc * height) + y + settings.yOffset);
                 var t = GetPixel(x, y);
-                var screenPos = new Vector2f((xLoc * width) + x + xOffset, (yLoc * height) + y + yOffset);
+                var screenPixel = renderCache.GetCachedColor((xLoc * width) + x, (yLoc * height) + y);
+
                 //var screenPos = new Vector2f(0, 0);
-                Color col = t.GetColor();
+                Color initialCol = t.GetColor();
+                initialCol.A = (byte)(int)(initialCol.A * settings.opacity);
+
+                if(initialCol.A == 255) { continue; }
                 
+                Color col = new Color(initialCol);
                 var v = new Vertex(screenPos + new Vector2f(0, 0), col);
                 vertices.Add(v);
 
@@ -41,6 +47,7 @@ internal class Tile
 
                 v = new Vertex(screenPos + new Vector2f(0, 1), col);
                 vertices.Add(v);
+                
             }
         }
     }

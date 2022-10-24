@@ -12,6 +12,7 @@ string inPath = @"../../../resources/apollosmall256.bmp";
 string outPath = @"../../../resources/out.cop";
 
 string bitPath = @"../../../resources/apollo24bsma.bmp";
+string secondLayerPath = @"../../../resources/graycatsmall.bmp";
 
 string RunningPath = AppDomain.CurrentDomain.BaseDirectory;
 string path = string.Format("{0}Resources\\", Path.GetFullPath(Path.Combine(RunningPath, @"..\..\..\")));
@@ -30,9 +31,9 @@ void main()
 
 void runBitmap ()
 {
-    Bitmap bmp = new Bitmap(bitPath);
-    int width = bmp.width - 1;
-    int height = bmp.height;
+    Bitmap background = new Bitmap(bitPath);
+    int width = background.width - 1;
+    int height = background.height;
 
     var initialScreenSize = new Vector2i(1366, 768);
 
@@ -47,24 +48,44 @@ void runBitmap ()
         0, width * 1, height * 1 // Default display mode
         );
 
+
+
     Layer layer1 = new Layer(ds.pixelWidth, ds.pixelHeight, 64);
+    layer1.GetSettings().opacity = 0.5f;
 
     for (int y = 0; y < height; y++)
     {
         for (int x = 0; x < width; x++)
         {
             //Draw the pixels bottom to top, as is in the format
-            //Console.WriteLine("(" + x + "," + (height - y - 1) + ") ");
-            //layer1.GetPixel(0, 0);
-            //Console.WriteLine("Setting color for (" + x + ", " + (height - y - 1) + ")");
-            layer1.GetPixel(x, height - y - 1).SetColor(bmp.getColor(x, y));
+            layer1.GetPixel(x, height - y - 1).SetColor(background.getColor(x, y));
         }
 
     }
-    
+
+
+    Bitmap top = new Bitmap(secondLayerPath);
+    width = top.width - 1;
+    height = top.height;
+
+    Layer layer2 = new Layer(width, height, 64);
+
+    for (int y = 0; y < height; y++)
+    {
+        for (int x = 0; x < width; x++)
+        {
+            //Draw the pixels bottom to top, as is in the format
+            layer2.GetPixel(x, height - y - 1).SetColor(top.getColor(x, y));
+        }
+
+    }
+
+
     Clock clock = new Clock();
 
     DisplayManager dm = new DisplayManager(ds, layer1, path);
+    dm.GetLayers().AddLayer(layer2);
+
     dm.GetWindow().SetFramerateLimit(60);
     //dm.GetWindow().SetVerticalSyncEnabled(true);
     dm.SetClock(clock);

@@ -72,6 +72,10 @@ class DisplayManager
 
     float scale;
 
+    public ref LayerHolder GetLayers()
+    {
+        return ref layers;
+    }
 
     public void SetClock(Clock c)
     {
@@ -202,7 +206,7 @@ class DisplayManager
 
         //mapRenderTexture = new RenderTexture((uint)displaySettings.startScreenWidth, (uint)displaySettings.startScreenHeight);
         overlay.Resize((uint)displaySettings.startScreenWidth, (uint)displaySettings.startScreenHeight);
-        layers.Resize((uint)displaySettings.startScreenWidth, (uint)displaySettings.startScreenHeight);
+        //layers.Resize((uint)displaySettings.startScreenWidth, (uint)displaySettings.startScreenHeight);
     }
     public void Display()
     {

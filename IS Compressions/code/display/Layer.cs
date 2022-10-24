@@ -19,11 +19,15 @@ class Layer
     {
         public int width;
         public int height;
-        public string imageType;
-        public int tileSize;
-        public bool visible;
         public int xOffset;
         public int yOffset;
+        public string imageType;
+        public int tileSize;
+
+
+        public bool visible;
+        public float opacity;
+
 
     }
 
@@ -49,16 +53,18 @@ class Layer
             tileMap[i].Init(tileSize, tileSize, i % tWidth, i / tWidth);
         }
 
-
+        settings.opacity = 1f;
         settings.visible = true;
         //Console.WriteLine(tileMap.Length);
     }
     
-    public void Render(ref RenderTexture renderTexture)
+    public void Render(ref ColorCache renderTexture)
     {
+
         foreach(Tile tile in tileMap)
         {
-            tile.Draw(ref rectPoints, settings.xOffset, settings.yOffset);
+            tile.Draw(ref rectPoints, settings);
+            
             renderTexture.Draw(rectPoints.ToArray(), PrimitiveType.Quads);
         }
     }
@@ -68,9 +74,9 @@ class Layer
        
     }
 
-    public LayerSettings GetSettings()
+    public ref LayerSettings GetSettings()
     {
-        return settings;
+        return ref settings;
     }
     public bool inBounds(int x, int y)
     {

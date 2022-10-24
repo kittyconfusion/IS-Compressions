@@ -16,6 +16,8 @@ internal class LayerHolder
     OverlayLayer overlay;
 
     internal RenderTexture screenRenderTexture;
+    internal ColorCache screenColorCache;
+    internal Color backgroundColor;
 
     public void Resize(uint x, uint y)
     {
@@ -24,6 +26,7 @@ internal class LayerHolder
     public LayerHolder(Layer backgroundLayer)
     {
         screenRenderTexture = new RenderTexture((uint)backgroundLayer.GetWidth(), (uint)backgroundLayer.GetHeight());
+        screenColorCache = new ColorCache((uint)backgroundLayer.GetWidth(), (uint)backgroundLayer.GetHeight());
         layers = new List<Layer>() { backgroundLayer };
     }
 
