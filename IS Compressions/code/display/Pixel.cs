@@ -11,22 +11,19 @@ namespace Map_Generator_CSharp.Source.tiles;
 internal class Pixel
 {
     private Color colorCache;
-
-    private bool needToRenderColor = true;
-
     public Pixel()
     {
-        colorCache = new Color(0,0,0,255);
-        //colorCache = new Color(100, 100, 200);
+        //colorCache = new Color(0,0,0,255);
+        colorCache = new Color(100, 100, 200, 0);
     } 
     public void SetColor(Color c)
     {
         colorCache = c;
+        RenderColor(0);
     }
 
     public Color GetColor(int displayMode = 0)
     {
-        if (needToRenderColor) { RenderColor(displayMode); needToRenderColor = false; }
         switch (displayMode)
         {
             case 0:
@@ -43,7 +40,7 @@ internal class Pixel
     }
     public void RenderColor(int displayMode)
     {
-        colorCache = new Color(colorCache.R, colorCache.G, colorCache.B, 255);
+        colorCache = new Color(colorCache.R, colorCache.G, colorCache.B, colorCache.A);
     }
 
 };

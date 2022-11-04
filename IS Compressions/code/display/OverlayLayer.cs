@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Map_Generator_CSharp.Source.external_util;
+using Map_Generator_CSharp.Source.tiles;
 using SFML.Graphics;
 using SFML.System;
 using SFML.Window;
@@ -14,28 +16,37 @@ internal class OverlayLayer
     internal RenderTexture overlayRenderTexture;
     private DisplaySettings settings;
     private RenderWindow window;
+    private LayerHolder layers;
     Font font;
+    private float xOffset, yOffset, scale;
+    private int fps;
 
-    public OverlayLayer(DisplaySettings settings, ref RenderWindow window, ref Font font)
+    public OverlayLayer(DisplaySettings settings, ref RenderWindow window, ref Font font, ref LayerHolder layers)
     {
         this.settings = settings;
         this.window = window;
         this.font = font;
         this.overlayRenderTexture = new RenderTexture((uint)settings.startScreenWidth, (uint)settings.startScreenHeight);
+        this.layers = layers;
     }
     public void Resize(uint x, uint y)
     {
+        overlayRenderTexture.Dispose(); //Object is never freed from memory if not called
         overlayRenderTexture = new RenderTexture(x, y);
     }
-    public void Draw(float xOffset, float yOffset, int fps)
+    public void Draw(float xOffset, float yOffset, int fps, float scale)
     {
+        this.xOffset = xOffset;
+        this.yOffset = yOffset;
+        this.fps = fps;
+        this.scale = scale;
         overlayRenderTexture.Clear(new Color(0, 0, 0, 0));
-        drawCoords(xOffset, yOffset);
-        drawControls();
-        drawColorScheme();
-        drawDebug(fps);
+        DrawCoords();
+        DrawControls();
+        DrawTool();
+        DrawDebug();
     }
-    private void drawCoords(float xOffset, float yOffset)
+    private void DrawCoords()
     {
         var coordText = new Text();
         coordText.Font = font;
@@ -55,7 +66,7 @@ internal class OverlayLayer
         coordText.Position = new Vector2f(10, 10);
         overlayRenderTexture.Draw(coordText);
     }
-    private void drawControls()
+    private void DrawControls()
     {
         var controlText = new Text();
         controlText.Font = font;
@@ -79,7 +90,7 @@ internal class OverlayLayer
         overlayRenderTexture.Draw(controlText);
     }
     
-    private void drawDebug(int fps)
+    private void DrawDebug()
     {
         var debugText = new Text();
         debugText.Font = font;
@@ -98,7 +109,7 @@ internal class OverlayLayer
         
         debugText.Position = new Vector2f(window.Size.X - debugText.GetGlobalBounds().Width - 10, 10);
         overlayRenderTexture.Draw(debugText);
-        /*
+        
         debugText.FillColor = new Color(255, 255, 255);
 
         debugText.CharacterSize = 24;
@@ -111,23 +122,31 @@ internal class OverlayLayer
         //Find the tile the mouse is currently hovering over
         Vector2f attemptTilePos = new Vector2f((mouseCoords.X / scale) - xOffset, ((mouseCoords.Y / scale) - yOffset));
         //Account for map centering in the middle of the screen instead of the top right corner
-        attemptTilePos -= new Vector2f((float)window.Size.X / 2 / scale, (float)window.Size.Y() / 2 / scale);
+        attemptTilePos -= new Vector2f((float)window.Size.X / 2 / scale, (float)window.Size.Y / 2 / scale);
 
         Vector2i attemptTilePosInt = new Vector2i((int)attemptTilePos.X, (int)attemptTilePos.Y);
 
-        if (tileMap.inBounds(attemptTilePosInt.X, attemptTilePosInt.Y))
-        {
-            debugText.DisplayedString += "\t\tX(" + attemptTilePosInt.X + ") Y(" + attemptTilePosInt.Y + ")\t";
-            Color colStr = tileMap.getTile(attemptTilePosInt.X, attemptTilePosInt.Y).getColor();
-            debugText.DisplayedString += "R(" + colStr.R + ") G(" + colStr.G + ") B(" + colStr.B + ")";
-        }
+        debugText.DisplayedString += "\t\tX(" + attemptTilePosInt.X + ") Y(" + attemptTilePosInt.Y + ")\t";
 
-        debugText.Position = new Vector2f(-15, getWindowHeight() - debugText.GetGlobalBounds().Height - 10);
+        debugText.DisplayedString += layers.GetTopLayerAtPos(attemptTilePosInt.X, attemptTilePosInt.Y);
+        /*
+        var c = 0;
+        foreach(Pixel? p in layers.GetPixelsAtPos(attemptTilePosInt.X, attemptTilePosInt.Y))
+        {
+            if (p == null) { continue; }
+            Color colStr = p.GetColor();
+            debugText.DisplayedString += "R(" + colStr.R + ") G(" + colStr.G + ") B(" + colStr.B + ") A(" + colStr.A + ")  ";
+
+            c += 1;
+        }
         */
+
+        debugText.Position = new Vector2f(-15, window.Size.Y - debugText.GetGlobalBounds().Height - 10);
+        
         overlayRenderTexture.Draw(debugText);
     }
     
-    private void drawColorScheme()
+    private void DrawTool()
     {
         var colorSchemeText = new Text();
         colorSchemeText.Font = font;
@@ -135,7 +154,7 @@ internal class OverlayLayer
         switch (settings.displayMode)
         {
             case 0:
-                colorSchemeText.DisplayedString = "";
+                colorSchemeText.DisplayedString = "...";
                 break;
             case 1:
                 colorSchemeText.DisplayedString = "Red";
@@ -161,20 +180,16 @@ internal class OverlayLayer
         colorSchemeText.Position = new Vector2f(window.Size.X - colorSchemeText.GetGlobalBounds().Width - 10, window.Size.Y - colorSchemeText.GetGlobalBounds().Height - 20);
         overlayRenderTexture.Draw(colorSchemeText);
     }
-}
-
-
-/*
- * 
+    /*
     private void drawTileStats()
     {
-
+        
         var viewTile = tileMap.getTile(viewTileCoords.X, viewTileCoords.Y);
 
         var featureText = "This is text";
 
-        var offset = 5;
-        var fontSize = 30; // Pixels
+        
+
 
         var xSize = (int)(13.5 * fontSize);
         var ySize = 4 * fontSize + 6 * offset;
@@ -185,6 +200,8 @@ internal class OverlayLayer
         rect.Position = viewTileDisplayCoords;
 
         menuRenderTexture.Draw(rect);
+        var fontSize = 30; // Pixels
+        var offset = 5;
 
         var text = new Text();
         text.Font = font;
@@ -196,14 +213,17 @@ internal class OverlayLayer
         text.Style = Text.Styles.Bold | Text.Styles.Underlined;
         text.Position = new Vector2f(viewTileDisplayCoords.X + offset, viewTileDisplayCoords.Y + offset);
         text.DisplayedString = "Tile (" + viewTileCoords.X + "," + viewTileCoords.Y + ")" + (featureText != "" ? " - " + featureText : "");
-        menuRenderTexture.Draw(text);
+        overlayRenderTexture.Draw(text);
         text.Style = Text.Styles.Regular;
-        
+
         text.Position = new Vector2f(text.Position.X, text.Position.Y + fontSize + offset);
         text.DisplayedString = "R " + viewTile.getColor().R +
                              "\nG " + viewTile.getColor().G +
-                             "\nG " + viewTile.getColor().B;
+                             "\nG " + viewTile.getColor().B +
+                             "\nA " + viewTile.getColor().A;
 
-        menuRenderTexture.Draw(text);
+        overlayRenderTexture.Draw(text);
     }
-*/
+    */
+}
+

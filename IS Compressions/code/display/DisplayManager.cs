@@ -29,7 +29,7 @@ class DisplayManager
     }
 
     private DisplaySettings displaySettings;
-    private float xOffset, yOffset;
+    public float xOffset, yOffset;
 
     private RenderWindow window;
     private View view;
@@ -87,8 +87,8 @@ class DisplayManager
         window.Clear(new Color(150, 150, 150));
 
 
-        layers.Draw();
-        overlay.Draw(xOffset,yOffset,fps);
+        layers.Draw((int)Math.Round(-xOffset),(int)Math.Round(-yOffset),scale);
+        overlay.Draw(xOffset,yOffset,fps,scale);
 
         // pass rendertexture to window
 
@@ -103,6 +103,8 @@ class DisplayManager
         overlayTextureSprite.TextureRect = new IntRect(0, (int)getWindowHeight(), (int)getWindowWidth(), (int)-getWindowHeight());
         //overlayTextureSprite.Scale = new Vector2f(1,1);
         window.Draw(overlayTextureSprite);
+
+        //layers.GetLayer(1).RenderNeededTilesOnScreen((int)xOffset, (int)yOffset);
     }
 
     double getTilesShown()
@@ -134,8 +136,8 @@ class DisplayManager
         loadFont();
         loadIcon();
 
-        layers = new LayerHolder(backLayer);
-        overlay = new OverlayLayer(settings, ref window, ref font);
+        layers = new LayerHolder(backLayer,window,backLayer.GetSettings().tileSize);
+        overlay = new OverlayLayer(settings, ref window, ref font, ref layers);
 
         // How many seconds does it take to move across one screen with the camera?
         double cameraSecondsPerScreen = 2;
@@ -283,9 +285,9 @@ class DisplayManager
         viewingTile = view;
     }
 
-    public Vector2i getTileCoordsFromScreenCoords(int screenX, int screenY)
+    public Vector2i getTileCoordsFromScreenCoords()
     {
-        return new Vector2i((int)(xOffset + (double)screenX), (int)(yOffset + (double)screenY));
+        return new Vector2i((int)(xOffset), (int)(yOffset));
     }
 
     public void onClick(int clickX, int clickY)

@@ -14,11 +14,23 @@ internal class Tile
 {
     private Pixel[] pixels;
 
-    int width, height;
-    int xLoc, yLoc;
+    private int width, height;
+    private int xLoc, yLoc;
+    private bool needsDraw = true;
+    int count = 0;
 
-    public void Draw(ref List<Vertex> vertices, LayerSettings settings, ref ColorCache renderCache)
+    public void SetDrawFlag()
     {
+        needsDraw = true;
+
+    }
+    public bool GetDrawFlag()
+    {
+        return needsDraw;
+    }
+    public void Draw(ref List<Vertex> vertices, ref LayerSettings settings, ref ColorCache renderCache)
+    {
+        needsDraw = false;
         vertices.Clear();
 
         for (var y = 0; y < height; y++)
@@ -27,15 +39,18 @@ internal class Tile
             {
                 var screenPos = new Vector2f((xLoc * width) + x + settings.xOffset, (yLoc * height) + y + settings.yOffset);
                 var t = GetPixel(x, y);
-                var screenPixel = renderCache.GetCachedColor((xLoc * width) + x, (yLoc * height) + y);
 
                 //var screenPos = new Vector2f(0, 0);
                 Color initialCol = t.GetColor();
-                initialCol.A = (byte)(int)(initialCol.A * settings.opacity);
-
-                if(initialCol.A == 255) { continue; }
                 
-                Color col = new Color(initialCol);
+                if(initialCol.A == 0) { continue; }
+
+                
+
+                var screenPixel = renderCache.GetCachedColor((int)screenPos.X, (int)screenPos.Y);
+
+                Color col = CalculateColor(initialCol, screenPixel, settings);
+                
                 var v = new Vertex(screenPos + new Vector2f(0, 0), col);
                 vertices.Add(v);
 
@@ -48,8 +63,32 @@ internal class Tile
                 v = new Vertex(screenPos + new Vector2f(0, 1), col);
                 vertices.Add(v);
                 
+                //renderCache.SetCachedColor((xLoc * width) + x, (yLoc * height))
             }
         }
+    }
+    private Color CalculateColor(Color a, Color b, LayerSettings settings)
+    {
+        float alphaA = (a.A / 255f);
+
+        float alphaB = (b.A / 255f);
+
+        var alphaOver = Math.Round(255 * settings.opacity * (alphaA + (alphaB * (1 - alphaA))));
+
+        byte red = (byte)(int)Math.Round(a.R + (b.R * alphaA));
+        byte green = (byte)(int)Math.Round(count + a.G + (b.G * alphaA));
+        byte blue = (byte)(int)Math.Round(count + a.B + (b.B * alphaA));
+
+        //if (settings.debug) { count++; }
+        //count++;
+        if(count > 60)
+        {
+            count = 0;
+        }
+
+        //Console.WriteLine(alphaOver);
+        return new Color(red, green, blue, (byte)(int)(alphaOver));
+
     }
     public void Init(int width, int height, int xLoc, int yLoc)
     {
@@ -67,6 +106,7 @@ internal class Tile
     public Pixel GetPixel(int x, int y)
     {
         //Console.WriteLine(pixels.Length + " Attempted to access " + ((y * width) + x));
+        //pixels[(y * width) + x].RenderColor(0);
         return pixels[(y * width) + x];
     }
 

@@ -11,8 +11,9 @@ using static IS_Compressions.code.display.DisplayManager;
 string inPath = @"../../../resources/apollosmall256.bmp";
 string outPath = @"../../../resources/out.cop";
 
-string bitPath = @"../../../resources/apollo24bsma.bmp";
+string bitPath = @"../../../resources/apollo24bmid.bmp";
 string secondLayerPath = @"../../../resources/graycatsmall.bmp";
+string thirdLayerPath = @"../../../resources/catpumpkin.bmp";
 
 string RunningPath = AppDomain.CurrentDomain.BaseDirectory;
 string path = string.Format("{0}Resources\\", Path.GetFullPath(Path.Combine(RunningPath, @"..\..\..\")));
@@ -48,17 +49,18 @@ void runBitmap ()
         0, width * 1, height * 1 // Default display mode
         );
 
+    const int TILE_SIZE = 48;
 
-
-    Layer layer1 = new Layer(ds.pixelWidth, ds.pixelHeight, 64);
-    layer1.GetSettings().opacity = 0.5f;
-
+    Layer layer1 = new Layer(ds.pixelWidth, ds.pixelHeight, TILE_SIZE);
+    layer1.GetSettings().opacity = 1.0f;
+    
     for (int y = 0; y < height; y++)
     {
         for (int x = 0; x < width; x++)
         {
             //Draw the pixels bottom to top, as is in the format
             layer1.GetPixel(x, height - y - 1).SetColor(background.getColor(x, y));
+            //Console.WriteLine(background.getColor(x, y).A);
         }
 
     }
@@ -68,14 +70,35 @@ void runBitmap ()
     width = top.width - 1;
     height = top.height;
 
-    Layer layer2 = new Layer(width, height, 64);
+    Layer layer2 = new Layer(width, height, TILE_SIZE);
+
+    
+    for (int y = 0; y < height; y++)
+    {
+        for (int x = 0; x < width; x++)
+        {
+            Color c = top.getColor(x, y);
+            if (c.R > 200) { c.A = 0; }
+            
+            //Draw the pixels bottom to top, as is in the format
+            layer2.GetPixel(x, height - y - 1).SetColor(new Color(c));
+        }
+
+    }
+
+    Bitmap emma = new Bitmap(thirdLayerPath);
+    width = emma.width - 1;
+    height = emma.height;
+    Layer layer3 = new Layer(width, height, TILE_SIZE);
+    layer3.GetSettings().opacity = 1.0f;
 
     for (int y = 0; y < height; y++)
     {
         for (int x = 0; x < width; x++)
         {
             //Draw the pixels bottom to top, as is in the format
-            layer2.GetPixel(x, height - y - 1).SetColor(top.getColor(x, y));
+            layer3.GetPixel(x, height - y - 1).SetColor(emma.getColor(x, y));
+            //Console.WriteLine(background.getColor(x, y).A);
         }
 
     }
@@ -85,8 +108,9 @@ void runBitmap ()
 
     DisplayManager dm = new DisplayManager(ds, layer1, path);
     dm.GetLayers().AddLayer(layer2);
+    dm.GetLayers().AddLayer(layer3);
 
-    dm.GetWindow().SetFramerateLimit(60);
+    dm.GetWindow().SetFramerateLimit(30);
     //dm.GetWindow().SetVerticalSyncEnabled(true);
     dm.SetClock(clock);
 
@@ -107,8 +131,42 @@ void runBitmap ()
 
     dm.Display();
 
+    var o = 0f;
+    bool dir = true;
+
+    int emmaX = 10;
+    int emmaY = 20;
+    int emmaS = 0;
+    dm.GetLayers().SetLocation(1, 60, 40);
+    dm.GetLayers().GetLayer(2).GetSettings().debug = true;
     while (dm.isOpen())
     {
+        if (o >= 0.99f) { dir = false; }
+        if (o <= 0.01f) { dir = true; }
+        if (dir) { o = o + 0.005f; }
+        else      { o = o - 0.005f; }
+
+        if (emmaX > 100) { emmaX -= 1; emmaS += 1; }
+        if (emmaX < 0) { emmaX += 1; emmaS += 1; }
+        if (emmaY > 100) { emmaY -= 1; emmaS += 1; }
+        if (emmaY < 0) { emmaY += 1; emmaS += 1; }
+
+        if (emmaS % 4 == 0) { emmaX += 1; }
+        if (emmaS % 4 == 2) { emmaX -= 1; }
+        if (emmaS % 4 == 1) { emmaY += 1; }
+        if (emmaS % 4 == 3) { emmaY -= 1; }
+
+
+        dm.GetLayers().SetOpacity(1, o);
+        dm.GetLayers().SetOpacity(2, Math.Max(0.5f,o*2));
+        dm.GetLayers().SetLocation(2, (int)-dm.xOffset, (int)-dm.yOffset);
+        //dm.GetLayers().SetLocation(2, emmaX, emmaY);
+        //dm.GetLayers().SetLocation(1, 60, 40);
+        //dm.GetLayers().layers[1].GetSettings().opacity = (dm.GetLayers().GetLayer(1).GetSettings().opacity + 0.01f) % 1;
+        //dm.GetLayers().GetLayer(1).GetSettings().yOffset += 1;
+        //dm.GetLayers().ResetAlreadyDrawn();
+        //Console.WriteLine(dm.getTileCoordsFromScreenCoords());
+        //Console.WriteLine(dm.GetLayers().GetLayer(1).GetSettings().opacity);
         window.DispatchEvents();
         dm.Move();
 
