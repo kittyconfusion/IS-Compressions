@@ -1,17 +1,15 @@
-﻿using System.Runtime.CompilerServices;
-using System.Xml.Serialization;
+﻿using IS_Compressions.code.core;
 using IS_Compressions.code.display;
 using IS_Compressions.code.formats;
-using IS_Compressions.code.util;
 using Map_Generator_CSharp.Source.tiles;
 using SFML.Graphics;
 using SFML.System;
-using static IS_Compressions.code.display.DisplayManager;
+using static IS_Compressions.code.core.Display;
 
 string inPath = @"../../../resources/apollosmall256.bmp";
 string outPath = @"../../../resources/out.cop";
 
-string bitPath = @"../../../resources/apollo24bmid.bmp";
+string bitPath = @"../../../resources/apollo24bsma.bmp";
 string secondLayerPath = @"../../../resources/graycatsmall.bmp";
 string thirdLayerPath = @"../../../resources/catpumpkin.bmp";
 
@@ -38,7 +36,7 @@ void runBitmap ()
 
     var initialScreenSize = new Vector2i(1366, 768);
 
-    DisplaySettings ds = new DisplaySettings(
+    Display.settings = new DisplaySettings(
         true, // whether to start on the map
         initialScreenSize.X, initialScreenSize.Y, // Screen width and height
         -width / 2, -height / 2, // Starting camera x and ys
@@ -49,9 +47,9 @@ void runBitmap ()
         0, width * 1, height * 1 // Default display mode
         );
 
-    const int TILE_SIZE = 48;
+    const int TILE_SIZE = 32;
 
-    Layer layer1 = new Layer(ds.pixelWidth, ds.pixelHeight, TILE_SIZE);
+    Layer layer1 = new Layer(Display.settings.pixelWidth, Display.settings.pixelHeight, TILE_SIZE);
     layer1.GetSettings().opacity = 1.0f;
     
     for (int y = 0; y < height; y++)
@@ -104,20 +102,19 @@ void runBitmap ()
     }
 
 
-    Clock clock = new Clock();
+    //Clock clock = new Clock();
 
-    DisplayManager dm = new DisplayManager(ds, layer1, path);
-    dm.GetLayers().AddLayer(layer2);
-    dm.GetLayers().AddLayer(layer3);
+    DisplayManager dm = new DisplayManager(layer1, path);
+    //dm.GetLayers().AddLayer(layer2);
+    //dm.GetLayers().AddLayer(layer3);
 
     dm.GetWindow().SetFramerateLimit(30);
     //dm.GetWindow().SetVerticalSyncEnabled(true);
-    dm.SetClock(clock);
 
     var window = dm.GetWindow();
 
     window.Closed += dm.OnClose;
-    window.Resized += dm.resize;
+    window.Resized += dm.WindowResize;
     window.MouseWheelScrolled += dm.OnMouseScroll;
     window.MouseButtonPressed += dm.OnMousePress;
     window.MouseButtonReleased += dm.OnMouseRelease;
@@ -137,8 +134,9 @@ void runBitmap ()
     int emmaX = 10;
     int emmaY = 20;
     int emmaS = 0;
-    dm.GetLayers().SetLocation(1, 60, 40);
-    dm.GetLayers().GetLayer(2).GetSettings().debug = true;
+    // dm.GetLayers().SetLocation(1, 60, 40);
+    // dm.GetLayers().GetLayer(2).GetSettings().debug = true;
+    //Console.WriteLine(dm.GetLayers().screenColorCache.GetCachedColor(10, 10));
     while (dm.isOpen())
     {
         if (o >= 0.99f) { dir = false; }
@@ -157,9 +155,9 @@ void runBitmap ()
         if (emmaS % 4 == 3) { emmaY -= 1; }
 
 
-        dm.GetLayers().SetOpacity(1, o);
-        dm.GetLayers().SetOpacity(2, Math.Max(0.5f,o*2));
-        dm.GetLayers().SetLocation(2, (int)-dm.xOffset, (int)-dm.yOffset);
+        //dm.GetLayers().SetOpacity(1, o);
+        //dm.GetLayers().SetOpacity(2, Math.Max(0.5f,o*2));
+        //dm.GetLayers().SetLocation(2, (int)-dm.xOffset, (int)-dm.yOffset);
         //dm.GetLayers().SetLocation(2, emmaX, emmaY);
         //dm.GetLayers().SetLocation(1, 60, 40);
         //dm.GetLayers().layers[1].GetSettings().opacity = (dm.GetLayers().GetLayer(1).GetSettings().opacity + 0.01f) % 1;
@@ -167,29 +165,14 @@ void runBitmap ()
         //dm.GetLayers().ResetAlreadyDrawn();
         //Console.WriteLine(dm.getTileCoordsFromScreenCoords());
         //Console.WriteLine(dm.GetLayers().GetLayer(1).GetSettings().opacity);
+
+        TimeKeeper.NewFrame();
+
         window.DispatchEvents();
-        dm.Move();
 
         dm.Display();
 
-        // frame-locked actions
-
-        currentTime = clock.ElapsedTime.AsSeconds();
-        deltaTime = currentTime - lastTime;
-        lastTime = currentTime;
-
-        dm.deltaTime = deltaTime;
-
-        // FPS calculation
-        deltaFPSTime = currentTime - lastFPSTime; // In seconds
-        frameCounter++;
-        if (deltaFPSTime >= FPSUpdateFreq)
-        {
-            double fps = frameCounter / deltaFPSTime;
-            dm.fps = ((int)(fps + 0.5));
-            lastFPSTime = currentTime;
-            frameCounter = 0;
-        }
+        
     }
 }
 

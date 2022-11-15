@@ -29,6 +29,10 @@ internal class ColorCache
             return true;
         }
     }
+    public void SetCachedColor(Vector2i pos, Color c)
+    {
+        colors[(pos.Y * width) + pos.X] = c;
+    }
     public void SetCachedColor(int x, int y, Color c)
     {
         colors[(y * width) + x] = c;

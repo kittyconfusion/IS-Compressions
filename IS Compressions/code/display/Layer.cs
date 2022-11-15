@@ -1,28 +1,23 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Drawing.Printing;
-using System.Linq;
-using System.Net.Http.Headers;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Drawing;
+using IS_Compressions.code.core;
 using IS_Compressions.code.display;
-using Map_Generator_CSharp.Source.tiles;
 using SFML.Graphics;
-using SFML.Window;
+using SFML.System;
+using Color = SFML.Graphics.Color;
 
 namespace Map_Generator_CSharp.Source.tiles;
 
 class Layer
 {
-    private Tile[] tileMap;
-
+    //private Tile[] tileMap;
+    private Pixel[] pixels;
+    internal List<Vector2i[]> drawCoords;
     public struct LayerSettings
     {
         public string name;
         public int width;
         public int height;
         public string imageType;
-        public int tileSize;
 
         public int xOffset;
         public int yOffset;
@@ -31,68 +26,84 @@ class Layer
 
         public bool debug;
     }
-
     
-    private LayerSettings settings = new LayerSettings();
-    private List<Vertex> rectPoints;
-
+    private LayerSettings s = new LayerSettings();
     public Layer(int width, int height, int tileSize)
     {
-        settings.width = width;
-        settings.height = height;
-        settings.tileSize = tileSize;
-        settings.xOffset = 0;
-        settings.yOffset = 0;
-        rectPoints = new List<Vertex>(tileSize * tileSize  *  4);
+        s.width = width;
+        s.height = height;
+        s.xOffset = 0;
+        s.yOffset = 0;
 
-        int tWidth = (int)Math.Ceiling((float)width / settings.tileSize);
-        int tHeight = (int)Math.Ceiling((float)height / settings.tileSize);
-        tileMap = new Tile[tWidth * tHeight];
-        for(int i = 0; i < tileMap.Length; i++)
+        pixels = new Pixel[width * height];
+        for(int i = 0; i < pixels.Length; i++)
         {
-            tileMap[i] = new Tile();
-            tileMap[i].Init(tileSize, tileSize, i % tWidth, i / tWidth);
+            pixels[i] = new Pixel();
+            //tileMap[i].Init(tileSize, tileSize, i % tWidth, i / tWidth);
         }
 
-        settings.opacity = 1.0f;
-        settings.visible = true;
-        settings.debug = false;
+        s.opacity = 1.0f;
+        s.visible = true;
+        s.debug = false;
         //Console.WriteLine(tileMap.Length);
     }
-    internal void ResetAlreadyDrawn()
+    public void Render(ref ColorCache renderCache, List<Vector2i> renderCoords)
     {
-        foreach(Tile t in tileMap)
-        {
-            t.SetDrawFlag();
-        }
-    }
-    public void Render(ref RenderTexture renderTexture, ref ColorCache renderCache)
-    {
-        foreach(Tile tile in tileMap)
-        {
-            if (tile.GetDrawFlag())
-            {
-                tile.Draw(ref rectPoints, ref settings, ref renderCache);
+        var ltopleft = new Vector2i(s.xOffset, s.yOffset);
+        var lbotright = new Vector2i(s.xOffset + s.width, s.yOffset + s.height);
 
-                renderTexture.Draw(rectPoints.ToArray(), PrimitiveType.Quads);
+        for (var i = 0; i < renderCoords.Count; i ++) 
+        {
+            var topleft = renderCoords[i];
+            var botright = renderCoords[i] + new Vector2i(Display.tileSize,Display.tileSize);
+
+            //If the render rectangle at all overlaps with the sprite, render
+            //if (!(ltopleft.X < botright.X && lbotright.X > topleft.X &&
+            //    ltopleft.Y > botright.Y && botright.Y < topleft.Y))
+            //if(true)
+            //{
+                for (var x = Math.Max(topleft.X - s.xOffset, 0); x < Math.Min(botright.X - s.xOffset, s.width); x++)
+                {
+                    for (var y = Math.Max(topleft.Y - s.yOffset, 0); y < Math.Min(botright.Y - s.yOffset, s.height); y++)
+                    {
+                        var screenPos = new Vector2i(x + s.xOffset, y + s.yOffset);
+                        var t = GetPixel(x, y);
+
+                        //var screenPos = new Vector2f(0, 0);
+                        Color initialCol = t.GetColor();
+
+                        if (initialCol.A == 0) { continue; }
+
+
+                        var screenPixel = renderCache.GetCachedColor((int)screenPos.X, (int)screenPos.Y);
+
+                        Color col = Pixel.CalculateColor(initialCol, screenPixel, s);
+
+                        //Console.WriteLine("R(" + col.R + ") G(" + col.G + ") B(" + col.B + ") A(" + col.A + ")  ");
+
+                        renderCache.SetCachedColor(screenPos, col);
+                    }
+                //}
             }
         }
     }
 
+
     //Only renders what is visible to the camera
+    /*
     public void RenderNeededTilesOnScreen(ref RenderTexture renderTexture, ref ColorCache renderCache, 
         int screenX, int screenY, float scale, uint windowWidth, uint windowHeight)
     {
-        for (int x = -(int)(windowWidth * 0.5f); x <= (int)(windowWidth * 0.5f); x += (int)(settings.tileSize))
+        for (int x = -(int)(windowWidth * 0.5f); x <= (int)(windowWidth * 0.5f); x += (int)(s.tileSize))
         {
-            for(int y = -(int)(windowHeight * 0.5f); y <= (int)(windowHeight * 0.5f); y += (int)(settings.tileSize))
+            for(int y = -(int)(windowHeight * 0.5f); y <= (int)(windowHeight * 0.5f); y += (int)(s.tileSize))
             {
                 Tile? t = GetTileRelativeToScreen(screenX - x, screenY - y);
                 if(t != null)
                 {
                     if (t.GetDrawFlag())
                     {
-                        t.Draw(ref rectPoints, ref settings, ref renderCache);
+                        t.Draw(ref rectPoints, ref s, ref renderCache);
 
                         renderTexture.Draw(rectPoints.ToArray(), PrimitiveType.Quads);
                     }
@@ -100,18 +111,20 @@ class Layer
             }
         }
     }
+    */
 
     public ref LayerSettings GetSettings()
     {
-        return ref settings;
+        return ref s;
     }
     public bool inBounds(int x, int y)
     {
-        return x >= 0 && x < settings.width && y >= 0 && y < settings.height;
+        return x >= 0 && x < s.width && y >= 0 && y < s.height;
     }
+    /*
     public Tile? GetPixelTile(int x, int y)
     {
-        int index = (x / settings.tileSize) + ((y / settings.tileSize) * (int)Math.Ceiling((float)settings.width / settings.tileSize));
+        int index = (x / s.tileSize) + ((y / s.tileSize) * (int)Math.Ceiling((float)s.width / s.tileSize));
         if (index < tileMap.Length && index > -1)
         {
             return tileMap[index];
@@ -121,52 +134,55 @@ class Layer
             return null;
         }
     }
+    */
+    /*
     public Tile? GetTileRelativeToScreen(int x, int y)
     {
-        return GetPixelTile(x + settings.xOffset, y + settings.yOffset);
+        return GetPixelTile(x + s.xOffset, y + s.yOffset);
     }
+    */
     public Pixel? GetPixelRelativeToScreen(int x, int y)
     {
-        return GetPixel(x + settings.xOffset, y + settings.yOffset);
+        return GetPixel(x + s.xOffset, y + s.yOffset);
     }
     public void ChangePixelColor(int x, int y, Color c)
     {
-        int pixelX = x % settings.tileSize;// - (settings.tileSize * (x / settings.tileSize));
-        int pixelY = y % settings.tileSize;// - (y * (settings.tileSize / settings.tileSize));
+        //int pixelX = x % s.tileSize;// - (s.tileSize * (x / s.tileSize));
+        //int pixelY = y % s.tileSize;// - (y * (s.tileSize / s.tileSize));
 
         if (inBounds(x, y))
         {
-            int tileIndex = (x / settings.tileSize) + ((y / settings.tileSize) * (int)Math.Ceiling((float)settings.width / settings.tileSize));
-            tileMap[tileIndex].SetDrawFlag();
-            tileMap[tileIndex].GetPixel(pixelX, pixelY).SetColor(c);
+            //int tileIndex = (x / s.tileSize) + ((y / s.tileSize) * (int)Math.Ceiling((float)s.width / s.tileSize));
+            //tileMap[tileIndex].SetDrawFlag();
+            GetPixel(x, y).SetColor(c);
         }
     }
     public Pixel? GetPixel(int x, int y) 
     {
-        int pixelX = x % settings.tileSize;// - (settings.tileSize * (x / settings.tileSize));
-        int pixelY = y % settings.tileSize;// - (y * (settings.tileSize / settings.tileSize));
+        //int pixelX = x % s.tileSize;// - (s.tileSize * (x / s.tileSize));
+        //int pixelY = y % s.tileSize;// - (y * (s.tileSize / s.tileSize));
 
         if (inBounds(x, y))
         {
-            int tileIndex = (x / settings.tileSize) + ((y / settings.tileSize) * (int)Math.Ceiling((float)settings.width / settings.tileSize));
-            //Console.WriteLine(x + " " + y + " " + tileIndex + " " + (float)width / settings.tileSize + " " + (y / settings.tileSize));
-            //Console.WriteLine(settings.width);
-            return tileMap[tileIndex].GetPixel(pixelX, pixelY);
+            //int tileIndex = (x / s.tileSize) + ((y / s.tileSize) * (int)Math.Ceiling((float)s.width / s.tileSize));
+            //Console.WriteLine(x + " " + y + " " + tileIndex + " " + (float)width / s.tileSize + " " + (y / s.tileSize));
+            //Console.WriteLine(s.width);
+            return pixels[(y * s.width) + x];
         }
         else
         {
             //Console.WriteLine("Tried to get nonexistant pixel at (" + pixelX + ", " + pixelY + ")");
             return null;
         }
-        //return tileMap[(y * settings.width) + x].GetPixel(x,y);
+        //return tileMap[(y * s.width) + x].GetPixel(x,y);
     }
 
     public int GetWidth() {
-        return settings.width;
+        return s.width;
     }
 
     public int GetHeight() {
-        return settings.height;
+        return s.height;
     }
 
 }

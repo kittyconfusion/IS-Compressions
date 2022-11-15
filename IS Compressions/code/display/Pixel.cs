@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using SFML.Graphics;
+﻿using SFML.Graphics;
 using static Map_Generator_CSharp.Source.tiles.Layer;
 
 namespace Map_Generator_CSharp.Source.tiles;
@@ -11,10 +6,12 @@ namespace Map_Generator_CSharp.Source.tiles;
 internal class Pixel
 {
     private Color colorCache;
+    private static Random r = new Random();
     public Pixel()
     {
+        colorCache = new Color((byte)r.Next(1,255),(byte)r.Next(1,255),(byte)r.Next(1,255),(byte)r.Next(1,255));
         //colorCache = new Color(0,0,0,255);
-        colorCache = new Color(100, 100, 200, 0);
+        //colorCache = new Color(100, 100, 200, 0);
     } 
     public void SetColor(Color c)
     {
@@ -42,5 +39,20 @@ internal class Pixel
     {
         colorCache = new Color(colorCache.R, colorCache.G, colorCache.B, colorCache.A);
     }
+    internal static Color CalculateColor(Color a, Color b, LayerSettings settings)
+    {
+        float alphaA = (a.A / 255f);
 
+        float alphaB = (b.A / 255f);
+
+        var alphaOver = Math.Round(255 * settings.opacity * (alphaA + (alphaB * (1 - alphaA))));
+
+        byte red = (byte)(int)Math.Round(a.R + (b.R * alphaA));
+        byte green = (byte)(int)Math.Round(a.G + (b.G * alphaA));
+        byte blue = (byte)(int)Math.Round(a.B + (b.B * alphaA));
+
+
+        //Console.WriteLine(alphaOver);
+        return new Color(red, green, blue, (byte)(int)(alphaOver));
+    }
 };
