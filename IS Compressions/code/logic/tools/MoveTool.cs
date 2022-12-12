@@ -1,11 +1,19 @@
-﻿using IS_Compressions.code.core;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Security.Cryptography;
+using System.Text;
+using System.Threading.Tasks;
+using IS_Compressions.code.core;
+using IS_Compressions.code.display;
 using SFML.System;
 using SFML.Window;
 
 namespace IS_Compressions.code.logic.tools;
-internal class CameraTool : Tool
+internal class MoveTool : Tool
 {
     readonly double maxClickLength = 0.2;
+    readonly double moveSpeed = 50;
 
     int clickX, clickY;
     int recentDragX, recentDragY;
@@ -92,30 +100,25 @@ internal class CameraTool : Tool
 
     public void OnMouseScroll(object sender, MouseWheelScrollEventArgs e)
     {
-        Camera.ChangeScale(e.Delta);
-        //moveCamera(1 / e.Delta, 1 / e.Delta);
-        //scale = e.Delta;
-        double cameraSecondsPerScreen = 2;
 
-        Camera.cameraSpeed = GetTilesShown() / cameraSecondsPerScreen; // Tiles per second
     }
     public void Move()
     {
         if (!drag)
         {
-            var effectiveCameraSpeed = Camera.cameraSpeed * TimeKeeper.deltaTime;
+            var effectiveMoveSpeed = moveSpeed * TimeKeeper.deltaTime;
 
-            if (shift) { effectiveCameraSpeed *= 3; }
-            if (control) { effectiveCameraSpeed /= 3; }
+            if (shift) { effectiveMoveSpeed *= 3; }
+            if (control) { effectiveMoveSpeed /= 3; }
 
-            if (up && !down) { Camera.MoveCamera(0, (float)effectiveCameraSpeed); }
-            else if (down && !up) { Camera.MoveCamera(0, (float)-effectiveCameraSpeed); }
-            if (left && !right) { Camera.MoveCamera((float)effectiveCameraSpeed, 0); }
-            else if (right && !left) { Camera.MoveCamera((float)-effectiveCameraSpeed, 0); }
+            float x = 0, y = 0;
+
+            if (up && !down) { y = (float)effectiveMoveSpeed; }
+            else if (down && !up) { y = (float)-effectiveMoveSpeed; }
+            if (left && !right) { x = (float)effectiveMoveSpeed; }
+            else if (right && !left) { x = (float)-effectiveMoveSpeed; }
+
+            DisplayManager.layers.MoveAmount(Display.currentSelectedLayer,(int)(x + 0.5), (int)(y + 0.5));
         }
-    }
-    private double GetTilesShown()
-    {
-        return Math.Max(Display.settings.startScreenWidth, Display.settings.startScreenHeight);
     }
 }

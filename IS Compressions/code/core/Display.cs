@@ -8,7 +8,10 @@ namespace IS_Compressions.code.core;
 
 internal static class Display
 {
-    public static readonly int tileSize = 32;
+    public static readonly int TILE_SIZE = 32;
+    public static int currentToolIndex = 0;
+    public static int currentSelectedLayer;
+
     public struct DisplaySettings
     {
         public bool mapStartEnabled;

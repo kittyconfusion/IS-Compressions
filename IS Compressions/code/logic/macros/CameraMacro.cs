@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using IS_Compressions.code.display;
 using SFML.System;
 
 namespace IS_Compressions.code.logic.macros;
@@ -15,4 +16,6 @@ internal class CameraMacro : Macro
         this.start = start;
         this.end = end;
     }
+
+    internal override void NextFrame() => throw new NotImplementedException();
 }

@@ -5,8 +5,8 @@ namespace IS_Compressions.code.display;
 
 internal class ColorCache
 {
-    private uint width;
-    private uint height;
+    internal uint width;
+    internal uint height;
 
     private Color[] colors;
     private int colLen;
@@ -18,9 +18,24 @@ internal class ColorCache
         colors = new Color[width * height];
         colLen = colors.Length - 1;
     }
+
+    public ColorCache(ColorCache c)
+    {
+        this.width = c.width;
+        this.height = c.height;
+        this.colors = (Color[]?)c.colors.Clone();
+        this.colLen = c.colLen;
+    }
+
+    public void CopyColors(ColorCache c)
+    {
+        this.colors = (Color[]?)c.colors.Clone();
+    }
+
+
     public bool InBounds(int tryX, int tryY)
     {
-        if (tryX < 0 || tryY < 0 || tryX > width || tryY > height)
+        if (tryX < 0 || tryY < 0 || tryX >= width || tryY >= height)
         {
             return false;
         }
@@ -32,6 +47,13 @@ internal class ColorCache
     public void SetCachedColor(Vector2i pos, Color c)
     {
         colors[(pos.Y * width) + pos.X] = c;
+    }
+    public void SetCachedColorIfInBounds(int x, int y, Color c)
+    {
+        if(InBounds(x, y))
+        {
+            colors[(y * width) + x] = c;
+        }
     }
     public void SetCachedColor(int x, int y, Color c)
     {

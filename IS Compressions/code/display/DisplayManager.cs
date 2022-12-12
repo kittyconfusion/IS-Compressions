@@ -8,6 +8,7 @@ using Font = SFML.Graphics.Font;
 using Image = SFML.Graphics.Image;
 using Disp = IS_Compressions.code.core.Display;
 using IS_Compressions.code.logic.tools;
+using IS_Compressions.code.logic.macros;
 
 namespace IS_Compressions.code.display;
 class DisplayManager
@@ -17,20 +18,17 @@ class DisplayManager
     private Font font;
 
 
-    private OverlayLayer overlay;
-    private LayerHolder layers;
+    internal static OverlayLayer overlay;
+    internal static LayerHolder layers;
     private Sprite renderTextureSprite = new Sprite();
     private Sprite overlayTextureSprite = new Sprite();
 
-    internal List<Tool> tools = new List<Tool> {new CameraTool()};
-    internal int currentToolIndex = 0;
+    internal List<Tool> tools = new List<Tool> {new CameraTool(), new MoveTool()};
+
+    bool alt = false;
 
     private string @resourceDir;
 
-    public ref LayerHolder GetLayers()
-    {
-        return ref layers;
-    }
     private void Draw()
     {
         // clear map rendertexture
@@ -85,7 +83,6 @@ class DisplayManager
         double cameraSecondsPerScreen = 2;
         // Camera speed in tiles per second
         Camera.cameraSpeed = Disp.settings.initialTilesShown / cameraSecondsPerScreen;
-        Camera.effectiveCameraSpeed = Camera.cameraSpeed;
 
         layers.ResetAlreadyDrawn();
     }
@@ -119,7 +116,6 @@ class DisplayManager
 
         window.SetIcon(icon.Size.X, icon.Size.Y, icon.Pixels);
     }
-
     public void WindowResize(object sender, SizeEventArgs e)
     {
         Disp.settings.startScreenWidth = (int)e.Width;
@@ -137,7 +133,7 @@ class DisplayManager
     }
     public void Display()
     {
-        tools[currentToolIndex].Update();
+        tools[Disp.currentToolIndex].Update();
         window.Clear();
         Draw();
         window.Display();
@@ -172,27 +168,45 @@ class DisplayManager
 
     internal void OnKeyRelease(object sender, KeyEventArgs e)
     {
-        tools[currentToolIndex].OnKeyRelease(sender, e);
+        if (e.Code == Keyboard.Key.LAlt || e.Code == Keyboard.Key.RAlt)
+        {
+            alt = false;
+        }
+        tools[Disp.currentToolIndex].OnKeyRelease(sender, e);
     }
     internal void OnKeyPress(object sender, KeyEventArgs e)
     {
-        tools[currentToolIndex].OnKeyPress(sender, e);
+        if (e.Code == Keyboard.Key.Space)
+        {
+            layers.ResetAlreadyDrawn();
+            //layers.macros[0].NextFrame();
+        }
+        if (e.Code > Keyboard.Key.Num0 && e.Code <= Keyboard.Key.Num9)
+        {
+            if (alt) { Disp.currentToolIndex = e.Code - Keyboard.Key.Num0; }
+            else { Disp.currentSelectedLayer = e.Code - Keyboard.Key.Num0; }
+        }
+        if (e.Code == Keyboard.Key.LAlt || e.Code == Keyboard.Key.RAlt)
+        {
+            alt = true;
+        }
+        tools[Disp.currentToolIndex].OnKeyPress(sender, e);
     }
     internal void OnMouseMove(object sender, MouseMoveEventArgs e)
     {
-        tools[currentToolIndex].OnMouseMove(sender, e);
+        tools[Disp.currentToolIndex].OnMouseMove(sender, e);
     }
     internal void OnMouseScroll(object sender, MouseWheelScrollEventArgs e)
     {
-        tools[currentToolIndex].OnMouseScroll(sender, e);
+        tools[Disp.currentToolIndex].OnMouseScroll(sender, e);
     }
     internal void OnMousePress(object sender, MouseButtonEventArgs e)
     {
-        tools[currentToolIndex].OnMousePress(sender, e);
+        tools[Disp.currentToolIndex].OnMousePress(sender, e);
     }
     internal void OnMouseRelease(object sender, MouseButtonEventArgs e)
     {
-        tools[currentToolIndex].OnMouseRelease(sender, e);
+        tools[Disp.currentToolIndex].OnMouseRelease(sender, e);
     }
 
     /*

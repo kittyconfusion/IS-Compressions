@@ -5,7 +5,7 @@ internal static class Camera
 {
     internal static float xOffset, yOffset;
     internal static float scale = 3;
-    internal static double cameraSpeed, effectiveCameraSpeed;
+    internal static double cameraSpeed;//, effectiveCameraSpeed;
     public static Vector2f GetOffset()
     {
         return new Vector2f(xOffset, yOffset);
