@@ -8,9 +8,10 @@ internal class Pixel
     private Color colorCache;
     private static Random r = new Random();
     private static Color Transparent = Color.White;
+    internal static double starThreshold = 1;
     public Pixel()
     {
-        if(r.NextDouble() > 0.99)
+        if(r.NextDouble() > starThreshold)
         {
             colorCache = new Color((byte)r.Next(1, 255), (byte)r.Next(1, 255), (byte)r.Next(1, 255), (byte)r.Next(1, 255));
         }
@@ -20,7 +21,8 @@ internal class Pixel
         }
         //colorCache = new Color(0,0,0,255);
         //colorCache = new Color(100, 100, 200, 0);
-    } 
+    }
+
     public void SetColor(Color c)
     {
         if(c.Equals(Transparent))
@@ -54,20 +56,27 @@ internal class Pixel
     {
         colorCache = new Color(colorCache.R, colorCache.G, colorCache.B, colorCache.A);
     }
-    internal static Color CalculateColor(Color a, Color b, LayerSettings settings)
-    {
+    internal static Color CalculateColor(Color a, Color b, LayerSettings s, LayerMacroSettings ms)
+    { 
         
-        float alphaA = (a.A / 255f);
+        float alphaA = ms.effectiveOpacity * (a.A / 255f);
         float alphaB = (b.A / 255f);
 
+        var alphaOver = (alphaA + (alphaB * (1 - alphaA)));
+         
+        byte red =   (byte)(int)Math.Round((a.R * alphaA + (b.R * alphaB * (1 - alphaA))) / alphaOver);
+        byte green = (byte)(int)Math.Round((a.G * alphaA + (b.G * alphaB * (1 - alphaA))) / alphaOver);
+        byte blue =  (byte)(int)Math.Round((a.B * alphaA + (b.B * alphaB * (1 - alphaA))) / alphaOver);
+        /*
 
         var alphaOver = Math.Round(255 * settings.opacity * (alphaA + (alphaB * (1 - alphaA))));
         
         byte red = (byte)(int)Math.Round(a.R + (b.R * (1 - alphaA)));
         byte green = (byte)(int)Math.Round(a.G + (b.G * (1 - alphaA)));
         byte blue = (byte)(int)Math.Round(a.B + (b.B * (1 - alphaA)));
-
-        return new Color(red, green, blue, (byte)(int)(alphaOver));
+        */
+        return new Color(red, green, blue, (byte)(int)(alphaOver * 255));
+        
 
     }
 };

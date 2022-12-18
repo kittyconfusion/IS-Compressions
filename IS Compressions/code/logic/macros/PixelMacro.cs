@@ -33,13 +33,21 @@ internal abstract class PixelMacro : Macro
         public static FloatColor operator +(FloatColor lhs, FloatColor rhs) => new(lhs.r + rhs.r, lhs.g + rhs.g, lhs.b + rhs.b);
 
         public static FloatColor operator %(FloatColor lhs, int rhs) => new(lhs.r % rhs, lhs.g % rhs, lhs.b % rhs);
+
+        
     }
-    protected PixelMacro(int frames, int repeat, bool CalledEveryPixel) : base(frames, repeat)
+    protected PixelMacro(int frames, int repeat, int delay, bool CalledEveryPixel) : base(frames, repeat, delay)
     {
         this.CalledEveryPixel = CalledEveryPixel;
     }
-
-    internal abstract void UpdateSettings(LayerSettings ls, ref LayerMacroSettings ms);
+    internal void Update(ref LayerSettings ls, ref LayerMacroSettings ms)
+    {
+        if(IsActive)
+        {
+            UpdateSettings(ref ls, ref ms);
+        }
+    }
+    internal abstract void UpdateSettings(ref LayerSettings ls, ref LayerMacroSettings ms);
 
     internal abstract Color PixelDraw(Color initialCol, Color screenPixel, LayerSettings s);
 }

@@ -23,7 +23,9 @@ class DisplayManager
     private Sprite renderTextureSprite = new Sprite();
     private Sprite overlayTextureSprite = new Sprite();
 
-    internal List<Tool> tools = new List<Tool> {new CameraTool(), new MoveTool()};
+    internal static List<Tool> tools = new List<Tool> {new CameraTool(), new MoveTool()};
+
+    internal static List<Macro> macros = new List<Macro>();
 
     bool alt = false;
 
@@ -252,4 +254,12 @@ class DisplayManager
         Disp.settings.displayMode = mode;
     }
 
+    internal void NextFrameMacroUpdate()
+    {
+        foreach(Macro m in macros) {
+            m.Next();
+        }
+
+        layers.NextFrameMacroUpdate();
+    }
 }

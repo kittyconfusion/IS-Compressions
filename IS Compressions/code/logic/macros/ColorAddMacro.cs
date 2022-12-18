@@ -15,10 +15,10 @@ internal class ColorAddMacro : PixelMacro
     internal FloatColor colAdd;
     internal FloatColor colChange;
 
-    public ColorAddMacro(int frames, int repeat, float r, float g, float b) : base(frames, repeat, true)
+    public ColorAddMacro(int frames, int repeat, int delay, FloatColor add) : base(frames, repeat, delay, true)
     {
         colChange = new FloatColor();
-        colAdd = new FloatColor(r,g,b);
+        colAdd = add;
     }
 
     internal override void NextFrame()
@@ -32,7 +32,7 @@ internal class ColorAddMacro : PixelMacro
         FloatColor pc = new FloatColor(initialCol);
         pc += colChange;
         pc %= 255;
-        return new Color(pc.ToColor());
+        return new Color((byte)pc.r,(byte)pc.g,(byte)pc.b,initialCol.A);
     }
-    internal override void UpdateSettings(Layer.LayerSettings ls, ref Layer.LayerMacroSettings ms) => throw new NotImplementedException();
+    internal override void UpdateSettings(ref Layer.LayerSettings ls, ref Layer.LayerMacroSettings ms) => throw new NotImplementedException();
 }

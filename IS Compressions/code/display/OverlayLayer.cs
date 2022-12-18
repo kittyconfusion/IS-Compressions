@@ -100,7 +100,7 @@ internal class OverlayLayer
 
         debugText.CharacterSize = 24;
         
-        debugText.DisplayedString = "(\t" + "WIP"; //"tileMap.GetSettings().width + " x " + tileMap.GetSettings().height;
+        debugText.DisplayedString = "(\t" + ""; //"tileMap.GetSettings().width + " x " + tileMap.GetSettings().height;
 
         
         //Get the current position of the mouse relative to the window

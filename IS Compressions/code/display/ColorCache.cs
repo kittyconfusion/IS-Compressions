@@ -1,4 +1,5 @@
-﻿using SFML.Graphics;
+﻿using IS_Compressions.code.core;
+using SFML.Graphics;
 using SFML.System;
 
 namespace IS_Compressions.code.display;
@@ -46,7 +47,7 @@ internal class ColorCache
     }
     public void SetCachedColor(Vector2i pos, Color c)
     {
-        colors[(pos.Y * width) + pos.X] = c;
+        colors[Features.Mod(((pos.Y * width) + pos.X), colors.Length)] = c;
     }
     public void SetCachedColorIfInBounds(int x, int y, Color c)
     {

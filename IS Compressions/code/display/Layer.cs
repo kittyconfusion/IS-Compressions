@@ -1,5 +1,7 @@
 ﻿using System.Drawing;
+using System.Net.Http.Headers;
 using System.Security.Cryptography.X509Certificates;
+using System.Threading.Tasks.Sources;
 using IS_Compressions.code.core;
 using IS_Compressions.code.display;
 using IS_Compressions.code.logic.macros;
@@ -35,11 +37,17 @@ class Layer
     {
         internal int HorizontalShift;
         internal int VerticalShift;
-
+        internal float HorizontalShear;
+        internal float VerticalShear;
+        internal float opacity;
+        internal float effectiveOpacity;
         internal void Reset()
         {
             HorizontalShift = 0;
             VerticalShift = 0;
+            HorizontalShear = 0f;
+            VerticalShear = 0f;
+            opacity = 0;
         }
     }
 
@@ -80,20 +88,29 @@ class Layer
         ms.Reset();
         SingleFrameScreenMacros();
 
+        ms.effectiveOpacity = Math.Max(Math.Min(s.opacity + ms.opacity, 1), 0);
+
+        if (ms.effectiveOpacity == 0 || !s.visible)
+        {
+            return;
+        }
+        
+
         if (s.isTiled)
         {
             for (var x = 0; x < renderCache.width; x++)
             {
                 for (var y = 0; y < renderCache.height; y++)
                 {
-                    var screenPos = new Vector2i(x + s.xOffset, y + s.yOffset);
+                    //var screenPos = new Vector2i(x + s.xOffset, y + s.yOffset);
+                    var screenPos = new Vector2i(x , y);
 
                     Color initialCol = GetColor(screenPos);
 
                     if (initialCol.A == 0) { continue; }
 
                     var screenPixel = renderCache.GetCachedColor((int)screenPos.X, (int)screenPos.Y);
-                    Color col = RunEveryPixelMacros(Pixel.CalculateColor(initialCol, screenPixel, s), screenPixel, s);
+                    Color col = RunEveryPixelMacros(Pixel.CalculateColor(initialCol, screenPixel, s, ms), screenPixel, s);
 
 
                     renderCache.SetCachedColor(screenPos, col);
@@ -106,7 +123,7 @@ class Layer
             {
                 for (var y = 0; y < Math.Min(renderCache.height, s.height); y++)
                 {
-                    var screenPos = new Vector2i(x + s.xOffset + ms.HorizontalShift, y + s.yOffset + ms.VerticalShift);
+                    var screenPos = new Vector2i(x + s.xOffset + ms.HorizontalShift + (int)(ms.HorizontalShear * y), y + s.yOffset + ms.VerticalShift + (int)(ms.VerticalShear * x));
 
                     //Color initialCol = GetColor(screenPos);
                     Color initialCol = pixels[x + (s.width * y)].GetColor();
@@ -116,7 +133,7 @@ class Layer
 
                     //var screenPixel = renderCache.GetCachedColor((int)screenPos.X, (int)screenPos.Y);
                     var screenPixel = renderCache.GetCachedColor(screenPos.X, screenPos.Y);
-                    Color col = RunEveryPixelMacros(Pixel.CalculateColor(initialCol, screenPixel, s), screenPixel, s);
+                    Color col = RunEveryPixelMacros(Pixel.CalculateColor(initialCol, screenPixel, s, ms), screenPixel, s);
                     //Color col = Pixel.CalculateColor(initialCol, screenPixel, s);
 
                     //Color col = RunEveryPixelMacros(initialCol, screenPixel, s);
@@ -124,87 +141,24 @@ class Layer
                     renderCache.SetCachedColor(screenPos, col);
                 }
             }
-
-            /*var ltopleft = new Vector2i(s.xOffset, s.yOffset);
-            var lbotright = new Vector2i(s.xOffset + s.width, s.yOffset + s.height);
-
-            for (var i = 0; i < renderCoords.Count; i++)
-            {
-                var topleft = renderCoords[i];
-                var botright = renderCoords[i] + new Vector2i(Display.TILE_SIZE, Display.TILE_SIZE);
-
-                for (var x = Math.Max(topleft.X - s.xOffset, 0); x < Math.Min(botright.X - s.xOffset, Math.Min(s.width, Display.settings.pixelWidth)); x++)
-                {
-                    for (var y = Math.Max(topleft.Y - s.yOffset, 0); y < Math.Min(botright.Y - s.yOffset, Math.Min(s.height, Display.settings.pixelHeight)); y++)
-                    {
-                        var screenPos = new Vector2i(x + s.xOffset, y + s.yOffset);
-
-                        //var screenPos = new Vector2f(0, 0);
-                        Color initialCol = GetPixel(x, y).GetColor();
-
-                        if (initialCol.A == 0) { continue; }
-
-
-                        var screenPixel = renderCache.GetCachedColor((int)screenPos.X, (int)screenPos.Y);
-
-                        Color col = Pixel.CalculateColor(initialCol, screenPixel, s);
-
-                        //Console.WriteLine("R(" + col.R + ") G(" + col.G + ") B(" + col.B + ") A(" + col.A + ")  ");
-
-                        renderCache.SetCachedColor(screenPos, col);
-                    }
-                }
-            }*/
         }
     }
-    private int CorrectModulus(int a, int b)
+    
+
+    private Color GetColor(Vector2i pos)
     {
-        return b * (a / b) + (a % b);
-    }
-    int mod(int a, int b)
-    {
-        if (b < 0) //you can check for b == 0 separately and do what you want
-            return -mod(-a, -b);
-        int ret = a % b;
-        if (ret < 0)
-            ret += b;
-        return ret;
-    }
-        private Color GetColor(Vector2i pos)
-    {
-        int x = mod(pos.X + ms.HorizontalShift, s.width);
-        int y = s.width * mod(pos.Y + ms.VerticalShift, s.height);
-        //Console.WriteLine(pos.X + " " + pos.Y + " " + ((pos.X + ms.HorizontalShift) % s.width) + " " + (s.width * ((pos.Y + ms.VerticalShift) % s.height)));
-        /*try { return pixels[((pos.X + ms.HorizontalShift) % s.width) + (s.width * (((pos.Y + ms.VerticalShift) % s.height)))].GetColor();
-            
-        }
-        catch (Exception e)
-        {
-            Console.WriteLine(pos.X + " " + pos.Y + " " + ms.HorizontalShift + " " + ms.VerticalShift);
-            Console.WriteLine(pixels.Length);
-            Console.WriteLine(((pos.X + ms.HorizontalShift) % s.width) + (s.width * ((pos.Y + ms.VerticalShift) % s.height)));
-            Console.WriteLine(((pos.X + ms.HorizontalShift) % s.width) + " " + (s.width * (((pos.Y + ms.VerticalShift) % s.height))));
-            Console.WriteLine();
-            return Color.White;
-        }
-        */
-        try
-        {
-            return pixels[x + y].GetColor();
-        } 
-        catch (Exception e)
-        {
-            Console.WriteLine(x + " " + y);
-        }
+        int x = Features.Mod(pos.X + ms.HorizontalShift + s.xOffset + (int)(ms.HorizontalShear * pos.Y ), s.width);
+        int y = s.width * Features.Mod(pos.Y + s.yOffset + ms.VerticalShift + (int)(ms.VerticalShear * pos.X), s.height);
 
-        return Color.White;
+        return pixels[x + y].GetColor();
     }
+    
     private Color RunEveryPixelMacros(Color initialCol, Color screenPixel, LayerSettings s)
     {
         Color current = initialCol;
         foreach (PixelMacro m in macros)
         {
-            if(m.CalledEveryPixel)
+            if(m.CalledEveryPixel && m.IsActive)
             {
                 current = m.PixelDraw(current, screenPixel, s);
             }
@@ -217,14 +171,15 @@ class Layer
         {
             if(!m.CalledEveryPixel)
             {
-                m.UpdateSettings(s, ref ms);
+                m.Update(ref s, ref ms);
             }
         }
     }
 
 
 
-    //Only renders what is visible to the camera
+    //Only renders what is
+    //to the camera
     /*
     public void RenderNeededTilesOnScreen(ref RenderTexture renderTexture, ref ColorCache renderCache, 
         int screenX, int screenY, float scale, uint windowWidth, uint windowHeight)
@@ -251,6 +206,10 @@ class Layer
     public ref LayerSettings GetSettings()
     {
         return ref s;
+    }
+    public ref LayerMacroSettings GetMacroSettings()
+    {
+        return ref ms;
     }
     public bool inBounds(int x, int y)
     {
@@ -323,6 +282,16 @@ class Layer
         }
     }
 
+    public void SetTransparent(Color c)
+    {
+        foreach(Pixel p in pixels) { 
+            if(p.GetColor().Equals(c))
+            {
+                p.SetColor(new Color(c.R, c.G, c.B, 0));
+            }
+        }
+    }
+
     public int GetWidth() {
         return s.width;
     }
@@ -331,4 +300,16 @@ class Layer
         return s.height;
     }
 
+    public static Layer operator *(Layer lhs, Layer rhs)
+    {
+        Layer l = new Layer(lhs.GetWidth(), lhs.GetHeight());
+        for (var x = 0; x < lhs.GetWidth(); x++)
+        {
+            for (var y = 0; y < lhs.GetHeight(); y++)
+            {
+                l.ChangePixelColor(x, y, lhs.GetColor(new Vector2i(0, 0)) * rhs.GetColor(new Vector2i(0, 0)));
+            }
+        }
+        return l;
+    }
 }

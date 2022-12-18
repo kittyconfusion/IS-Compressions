@@ -45,7 +45,7 @@ internal class LayerHolder
         {
             foreach (Macro m in l.macros)
             {
-                m.NextFrame();
+                m.Next();
             }
         }
     }
@@ -212,7 +212,7 @@ internal class LayerHolder
         screenColorCache.ClearColors(Color.Black);
         foreach (Layer layer in layers)
         {
-            if (layer.GetSettings().visible && layer.GetSettings().opacity != 0f)
+            if (layer.GetSettings().visible)
             {
                 layer.Render(screenColorCache, drawCoords, layerTempCache);
             }

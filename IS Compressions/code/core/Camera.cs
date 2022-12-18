@@ -17,6 +17,6 @@ internal static class Camera
     }
     public static void ChangeScale(double delta)
     {
-        scale = (float)Math.Min(Math.Max(scale + delta, 4), 50);
+        scale = (float)Math.Min(Math.Max(scale + delta, 3), 50);
     }
 }

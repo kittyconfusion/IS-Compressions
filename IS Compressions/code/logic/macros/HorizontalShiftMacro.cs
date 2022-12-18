@@ -15,7 +15,7 @@ internal class HorizontalShiftMacro : PixelMacro
     internal float change;
     internal float shift = 0;
 
-    public HorizontalShiftMacro(int frames, int repeat, float changeOnFrame) : base(frames, repeat, false)
+    public HorizontalShiftMacro(int frames, int repeat, int delay, float changeOnFrame) : base(frames, repeat, delay, false)
     {
         change = changeOnFrame;
     }
@@ -27,7 +27,7 @@ internal class HorizontalShiftMacro : PixelMacro
 
     internal override Color PixelDraw(Color initialCol, Color screenPixel, LayerSettings s) => throw new NotImplementedException();
 
-    internal override void UpdateSettings(LayerSettings ls, ref LayerMacroSettings ms)
+    internal override void UpdateSettings(ref LayerSettings ls, ref LayerMacroSettings ms)
     {
         ms.HorizontalShift = (int)shift;
     }
